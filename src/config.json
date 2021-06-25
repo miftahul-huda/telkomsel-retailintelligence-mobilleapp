@@ -1,0 +1,13 @@
+{
+    "VERSION" : "2.1.17",
+    "ENVIRONMENT" : "(DEV)",
+    "API_HOST" : "https://dev-retail-intelligence-api-dot-telkomsel-retail-intelligence.et.r.appspot.com",
+    "API_HOST_AUTH" : "https://authentication-v2-dot-telkomsel-retail-intelligence.et.r.appspot.com",
+    "API_HOST_UPLOAD" : "https://dev-gcsfileuploader-v2-dot-telkomsel-retail-intelligence.et.r.appspot.com",
+    "API_HOST_LOG" : "https://logger-dot-telkomsel-retail-intelligence.et.r.appspot.com",
+    "API_HOST_FILTER" : "https://asia-southeast2-telkomsel-retail-intelligence.cloudfunctions.net/retrieve-package-items-v2",
+    "API_HOST_OPERATOR_FILTER" : "https://asia-southeast2-telkomsel-retail-intelligence.cloudfunctions.net/dual_model_poster_analysis",
+    "API_HOST_DOMINANT_OPERATOR" : "https://asia-southeast2-telkomsel-retail-intelligence.cloudfunctions.net/storefront_analysis",
+    "POSTER_UPLOAD_PATH" : "telkomsel-retail-intelligence/retail-intelligence-bucket/dev-uploads%2Fposter",
+    "STOREFRONT_UPLOAD_PATH" : "telkomsel-retail-intelligence/retail-intelligence-bucket/dev-uploads%2Fstorefront"
+}

@@ -1,0 +1,12 @@
+{
+  "name": "telkomsel-retail-intelligence",
+  "displayName": "telkomsel-retail-intelligence",
+  "expo": {
+    "name": "telkomsel-retail-intelligence",
+    "slug": "telkomsel-retail-intelligence",
+    "version": "1.0.0",
+    "assetBundlePatterns": [
+      "**/*"
+    ]
+  }
+}
