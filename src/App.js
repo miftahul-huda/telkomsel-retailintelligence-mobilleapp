@@ -73,7 +73,7 @@ export default class App extends Component {
           <Scene key="root">
             
             <Scene key="homePage" component={HomePage} title="HomePage" initial={false} hideNavBar={true} />
-            <Scene key="imageHomePage" component={ImageHomePage} title="ImageHomePage" initial={false} hideNavBar={true} />
+            <Scene key="imageHomePage" component={ImageHomePage} title="ImageHomePage" initial={true} hideNavBar={true} />
             <Scene key="webPage" component={WebPage} title="WebPage" initial={false} hideNavBar={true} />
             <Scene key="beforeAfterPosterHomePage" component={BeforeAfterPosterHomePage} title="BeforeAfterPosterHomePage" initial={false} hideNavBar={true} />
             <Scene key="beforeAfterStoreFrontHomePage" component={BeforeAfterStoreFrontHomePage} title="BeforeAfterStoreFrontHomePage" initial={false} hideNavBar={true} />

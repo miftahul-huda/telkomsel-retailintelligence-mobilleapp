@@ -6,6 +6,18 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
+*.yaml
+.DS_Store
+ios/
+android/build/
+android/gradle/
+android/app/build/
+*.keystore
+android/app/src/debug/
+android/app/src/main/assets/
+android/.gradle/
+
+
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
