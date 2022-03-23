@@ -68,21 +68,35 @@ export default class ImageCropperPage extends React.Component {
         <ActivityIndicator size="large"></ActivityIndicator>
         :
         null}
-        <Button style = {{alignSelf: 'center', margin: 30, 
-            width: '80%', backgroundColor: '#AA2025'}}
-                onPress= {() => {
-                    this.setState({
-                      loading: true
-                    })
-                    this.cropViewRef.current.saveImage(true, 100);
-                    
-                }}>
-                <View style={{flex: 1, flexDirection: 'row', width:'90%', alignSelf: 'center', alignItems:'center', justifyContent:'center',}}>
-                  <Image source={require('./images/save_white.png')} />
-                  <View style={{width: '2%'}}></View>
-                  <Text style={{ color: '#ffffff'}}>Simpan</Text>
-                </View>
-        </Button>
+        <View style={{paddingBottom: 20}}>
+          <Button style = {{alignSelf: 'center',  
+              width: '80%', backgroundColor: '#666'}}
+                  onPress= {() => {
+                      this.setState({
+                        loading: true
+                      })
+                      this.cropViewRef.current.saveImage(true, 100);
+                      
+                  }}>
+                  <View style={{flex: 1, flexDirection: 'row', width:'90%', alignSelf: 'center', alignItems:'center', justifyContent:'center',}}>
+                    <Image source={require('./images/save.png')} />
+                    <View style={{width: '2%'}}></View>
+                    <Text style={{ color: '#fff'}}>Simpan</Text>
+                  </View>
+          </Button>
+          <Button style = {{alignSelf: 'center',
+              width: '80%', backgroundColor: '#fff'}}
+                  onPress= {() => {
+                      Actions.pop()
+                      
+                  }}>
+                  <View style={{flex: 1, flexDirection: 'row', width:'90%', alignSelf: 'center', alignItems:'center', justifyContent:'center',}}>
+                    <Image source={require('./images/cancel.png')} />
+                    <View style={{width: '2%'}}></View>
+                    <Text style={{ color: '#000'}}>Batal</Text>
+                  </View>
+          </Button>
+        </View>
         </View>);
   }
 

@@ -5,7 +5,7 @@ import { Container, Content, Text, Card, Header, Footer, Body, Title,
   Left,
   Item, CardItem, Icon, Button, Label, Input } from 'native-base';
 
-import { Image, View, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { Image, View, ScrollView, TouchableOpacity, ActivityIndicator, TextInput } from 'react-native';
 import { Actions } from 'react-native-router-flux';
 import DropDownPicker from 'react-native-dropdown-picker';
 
@@ -14,6 +14,8 @@ import HttpClient from './util/HttpClient';
 
 import Logging from './util/Logging';
 import GlobalSession, { currentUser } from './GlobalSession';
+import Style from './style';
+import LabelInput from './components/LabelInput';
 
 
 export default class AddStorePage extends Component {
@@ -23,6 +25,8 @@ export default class AddStorePage extends Component {
             areas: [],
             store_name: '',
             store_id: '',
+            province: '',
+            district: '',
             store_area: '',
             selectedArea: null,
             showIndicator: false
@@ -48,7 +52,7 @@ export default class AddStorePage extends Component {
 
     getAreas(){
         let promise = new Promise((resolve, reject)=>{
-            let url = Config.API_HOST + "/store/area";
+            let url = GlobalSession.Config.API_HOST + "/store/area";
            
             console.log("get area url")
             console.log(url);
@@ -92,7 +96,7 @@ export default class AddStorePage extends Component {
     addStoreToDatabase(store_id, store_name, store_area)
     {
         let promise = new Promise((resolve, reject)=>{
-            let url = Config.API_HOST + "/store/add";
+            let url = GlobalSession.Config.API_HOST + "/store/add";
             let store = {};
             store.store_name = store_name;
             store.storeid = store_id;
@@ -167,32 +171,46 @@ export default class AddStorePage extends Component {
 
         return(
           <Container>
-            <Header style={{backgroundColor: '#AA2025'}}>
-              <Body>
-                <View  style={{flex: 1, flexDirection: 'row'}}>
-                <TouchableOpacity onPress={()=> me.back()} style={{marginTop: '0%', padding: '4%'}} >
-                    <Image style={{ width: 20, height: 20}} source={require('./images/back.png')}></Image>
-                </TouchableOpacity>
-                <Title style={{ marginTop: '3%' }}>Tambah toko</Title>
+            <Header style={{backgroundColor: '#FFF'}}>
+                <View  style={Style.headerHorizontalLayout}>
+                        <TouchableOpacity onPress={()=> me.back()}>
+                            <Image style={Style.headerImage} resizeMode='contain' source={require('./images/back-dark.png')}></Image>
+                        </TouchableOpacity>
+                        <View style={{width: 10}}></View>
+                        <Title style={Style.headerTitle}>Tambah informasi outlet</Title>
                 </View>
-              </Body>
             </Header>
 
             <Content padder>
-                <View style={{flex: 1}}>
+                <View style={{flex: 1, padding: 20}}>
                     
-                    <ScrollView>
-                        <Item>
-                            <Label>ID outlet</Label>
-                            <Input onChangeText={value => { this.setState({ store_id: value }) }}/>
-                        </Item>
 
-                        <Item>
-                            <Label>Nama outlet</Label>
-                            <Input onChangeText={value => { this.setState({ store_name: value }) }}/>
-                        </Item>
-
-                        <Item>
+                        <View>
+                            <LabelInput text="ID Outlet" subtext="Nomor identifikasi outlet"></LabelInput>
+                            <TextInput style={Style.textInput} onChangeText={value => { this.setState({ store_id: value }) }}/>
+                        </View>
+                        <View style={{height: 20}}></View>
+                        <View>
+                            <LabelInput text="Nama outlet" subtext="Nama outlet, misal 'Toko Amir'"></LabelInput>
+                            <TextInput style={Style.textInput} onChangeText={value => { this.setState({ store_name: value }) }}/>
+                        </View>
+                        <View style={{height: 20}}></View>
+                        <View>
+                            <LabelInput text="Branch" subtext="Branch tempat di mana outlet berada"></LabelInput>
+                            <TextInput style={Style.textInput} onChangeText={value => { this.setState({ store_branch: value }) }}/>
+                        </View>
+                        <View style={{height: 20}}></View>
+                        <View>
+                            <LabelInput text="Region" subtext="Region tempat di mana outlet berada"></LabelInput>
+                            <TextInput style={Style.textInput} onChangeText={value => { this.setState({ store_region: value }) }}/>
+                        </View>
+                        <View style={{height: 20}}></View>
+                        <View>
+                            <LabelInput text="Kabupaten/kota" subtext="Kabupaten/kota tempat di mana outlet berada"></LabelInput>
+                            <TextInput style={Style.textInput} onChangeText={value => { this.setState({ store_city: value }) }}/>
+                        </View> 
+                        <View style={{height: 20}}></View>
+                        <View>
                             <View  style={{ width: '100%' }}>
                                 <Text style={{ paddingBottom: 4 }}>Area</Text>
                                 <List>
@@ -212,9 +230,9 @@ export default class AddStorePage extends Component {
                                 }
                                 </List>
                             </View>
-                        </Item>
+                        </View>
 
-                        <Item>
+                        <View>
 
                                 { ( this.state.showIndicator ) ? 
                                 <View>
@@ -222,18 +240,22 @@ export default class AddStorePage extends Component {
                                 </View>
                                 : null}
 
-                        </Item>
+                        </View>
 
-                    </ScrollView>
+                        <View style={{height: 20}}></View>
+                        <View style={{padding: '2%'}}>
+                            <Button style={Style.buttonRed} onPress={()=>this.addStore()}>
+                                <View style={{ alignItems: 'center', width: '100%' }}>
+                                    <Text style={{color: '#fff'}}>Tambah outlet</Text>
+                                </View>
+                            </Button>
+                        </View>
+
+
                 </View>
     
             </Content>
-            <Footer style={{backgroundColor: '#AA2025', padding: '2%'}}>
-
-                <TouchableOpacity onPress={this.addStore.bind(this)} >
-                    <Image source={require('./images/save_white.png')} />
-                </TouchableOpacity> 
-            </Footer>
+ 
 
           </Container>
         );

@@ -105,7 +105,7 @@ export default class MenuPage extends Component {
       <Container>
         <Header style={{backgroundColor: '#AA2025'}}>
           <Body>
-            <Title>Menu {Config.ENVIRONMENT}</Title>
+            <Title>Menu {GlobalSession.Config.ENVIRONMENT}</Title>
           </Body>
         </Header>
         <Content padder>

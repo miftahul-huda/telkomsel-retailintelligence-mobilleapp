@@ -13,10 +13,8 @@ import UploadedFile from './model/UploadedFile';
 import FilePackageItem from './model/FilePackageItem';
 import FilePackageSubItem from './model/FilePackageSubItem';
 import DropDownPicker from 'react-native-dropdown-picker';
-
-import Config from './config.json';
 import HttpClient from './util/HttpClient';
-GlobalSession = require( './GlobalSession');
+import GlobalSession from './GlobalSession';
 
 import * as SQLite from "expo-sqlite";
 import Sequelize from "rn-sequelize";
@@ -69,7 +67,7 @@ export default class ImageInfoPage extends React.Component {
     {
         let me = this;
         let promise = new Promise((resolve, reject) => {
-            let url = Config.API_HOST + "/uploadfile/get/" + file.id;
+            let url = GlobalSession.Config.API_HOST + "/uploadfile/get/" + file.id;
             HttpClient.get(url, function(response){
                 resolve(response.payload)
             }, function (error){
@@ -107,7 +105,7 @@ export default class ImageInfoPage extends React.Component {
 
     getOperators(){
         let promise = new Promise((resolve, reject)=>{
-            let url = Config.API_HOST + "/operator";
+            let url = GlobalSession.Config.API_HOST + "/operator";
             
             HttpClient.get(url, function(res){
                 
@@ -122,7 +120,7 @@ export default class ImageInfoPage extends React.Component {
 
     getSubOperators(operator_id){
         let promise = new Promise((resolve, reject)=>{
-            let url = Config.API_HOST + "/suboperator/" + operator_id;
+            let url = GlobalSession.Config.API_HOST + "/suboperator/" + operator_id;
             HttpClient.get(url, function(res){
                 resolve(res.payload);
             });
@@ -132,7 +130,7 @@ export default class ImageInfoPage extends React.Component {
 
     getStores(){
         let promise = new Promise((resolve, reject)=>{
-            let url = Config.API_HOST + "/store";
+            let url = GlobalSession.Config.API_HOST + "/store";
             HttpClient.get(url, function(res){
                 resolve(res.payload);
             });
@@ -299,7 +297,7 @@ export default class ImageInfoPage extends React.Component {
     initPackageItemsFromRemote(me, callback)
     {
         let tempid = me.getMaxTempId();
-        let url = Config.API_HOST + "/filepackageitem/file/" + me.state.file.id;
+        let url = GlobalSession.Config.API_HOST + "/filepackageitem/file/" + me.state.file.id;
         HttpClient.get(url, function(response){
             let items = response.payload;
             console.log("items from remote")
@@ -308,7 +306,7 @@ export default class ImageInfoPage extends React.Component {
                 item.price = '' + item.price; 
                 item.transferPrice = '' + item.transferPrice;
 
-                let url = Config.API_HOST + "/filepackagesubitem/packageitem/" + item.id;
+                let url = GlobalSession.Config.API_HOST + "/filepackagesubitem/packageitem/" + item.id;
                 HttpClient.get(url, (response) => {
                     let subItems = response.payload;
                     item.filePackageSubItems = subItems;
@@ -564,7 +562,7 @@ export default class ImageInfoPage extends React.Component {
 
     uploadImageInfo(me, uploaded_filename, item, callback, callbackError){
 
-        var url = Config.API_HOST + "/uploadfile/create";
+        var url = GlobalSession.Config.API_HOST + "/uploadfile/create";
         me.state.file.upload_date = me.getCurrentDate();
         me.state.file.uploaded_by_email = GlobalSession.currentUser.email;
         me.state.file.uploaded_by_fullname = GlobalSession.currentUser.firstname + " " + GlobalSession.currentUser.lastname;
@@ -628,7 +626,7 @@ export default class ImageInfoPage extends React.Component {
 
     uploadPackageItem(me, item, callback, callbackError)
     {
-        var url = Config.API_HOST + "/filepackageitem/create"; 
+        var url = GlobalSession.Config.API_HOST + "/filepackageitem/create"; 
         console.log("uploading package item");
         console.log(item);
         
@@ -677,7 +675,7 @@ export default class ImageInfoPage extends React.Component {
 
     deletePackageSubItemsByPackageIdRemote(packageId, callback)
     {
-        let url = Config.API_HOST + "/filepackagesubitem/delete-by-packageitem/" + packageId;
+        let url = GlobalSession.Config.API_HOST + "/filepackagesubitem/delete-by-packageitem/" + packageId;
         HttpClient.get(url, (response) => {
             if(callback != null)
                 callback(response);
@@ -703,7 +701,7 @@ export default class ImageInfoPage extends React.Component {
                 newItem.packageItemId = parentId;
 
                 //Call the REST API to save the new item
-                var url = Config.API_HOST + "/filepackagesubitem/create";
+                var url = GlobalSession.Config.API_HOST + "/filepackagesubitem/create";
 
                 //Log
                 console.log("Call " + url);
@@ -727,7 +725,7 @@ export default class ImageInfoPage extends React.Component {
     uploadToServer(callback, callbackError)
     {
         var me = this;
-        var url = Config.API_HOST_UPLOAD + "/upload/gcs/" + Config.POSTER_UPLOAD_PATH;
+        var url = GlobalSession.Config.API_HOST_UPLOAD + "/upload/gcs/" + GlobalSession.Config.POSTER_UPLOAD_PATH;
         console.log(url);
         HttpClient.upload(url, this.state.file.filename, function(res){
             console.log("done upload image");
@@ -797,7 +795,7 @@ export default class ImageInfoPage extends React.Component {
     //Delete remote package items
     deleteRemotePackageItems(callback, callbackError)
     {
-        var url = Config.API_HOST + "/filepackageitem/delete-by-uploadid/" + this.state.file.id;
+        var url = GlobalSession.Config.API_HOST + "/filepackageitem/delete-by-uploadid/" + this.state.file.id;
         HttpClient.get(url, function(response){
             if(callback != null)
                 callback(response);
@@ -812,7 +810,7 @@ export default class ImageInfoPage extends React.Component {
     saveUpdateRemote(callback, callbackError)
     {
         var me= this;
-        var url = Config.API_HOST + "/uploadfile/update/" + me.state.file.id;
+        var url = GlobalSession.Config.API_HOST + "/uploadfile/update/" + me.state.file.id;
         me.state.file.updatedAt = me.getCurrentDate();
 
         var newFile = JSON.stringify(me.state.file);
@@ -959,7 +957,7 @@ export default class ImageInfoPage extends React.Component {
 
     uploadToGcs(orientation, callback, callbackError)
     {
-        var url = Config.API_HOST_UPLOAD + "/upload/gcs/telkomsel-retail-intelligence/retail-intelligence-bucket/temporary";
+        var url = GlobalSession.Config.API_HOST_UPLOAD + "/upload/gcs/telkomsel-retail-intelligence/retail-intelligence-bucket/temporary";
         console.log(url);
         HttpClient.upload(url, this.state.file.filename, function(res){
             console.log("done upload image");
@@ -979,7 +977,7 @@ export default class ImageInfoPage extends React.Component {
     }
 
     callFilter(me, uri, orientation, callback, callbackError){
-        var url = Config.API_HOST_FILTER;
+        var url = GlobalSession.Config.API_HOST_FILTER;
         var data = { url: uri, orientation: orientation }
 
         console.log(url);
@@ -1001,7 +999,7 @@ export default class ImageInfoPage extends React.Component {
     }
 
     callOperatorFilter(me, uri,  callback, callbackError){
-        var url = Config.API_HOST_OPERATOR_FILTER;
+        var url = GlobalSession.Config.API_HOST_OPERATOR_FILTER;
         uri = uri.replace("https://storage.googleapis.com/", 'gs://')
         var data = { url: uri }
 

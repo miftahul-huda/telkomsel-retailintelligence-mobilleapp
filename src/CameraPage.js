@@ -37,6 +37,11 @@ export default class CameraPage extends React.Component {
       }
     }
 
+    componentDidMount()
+    {
+
+    }
+
     makeid(length) {
       var result           = '';
       var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -81,6 +86,7 @@ export default class CameraPage extends React.Component {
           uploadedFile.store_id = GlobalSession.currentStore.storeid;
         }
 
+        uploadedFile.imageStatus = "draft";
         uploadedFile.imageCategory = GlobalSession.imageCategory.value;
         return uploadedFile;
     }
@@ -112,7 +118,7 @@ export default class CameraPage extends React.Component {
             .catch(error => {
                 const { code, message } = error;
                 console.log( message);
-                Logging.log(error, "error", "CameraPage.createNewFileInfo() : GetLocation.getCurrentPosition()")
+                //Logging.log(error, "error", "CameraPage.createNewFileInfo() : GetLocation.getCurrentPosition()")
                 uploadedFile  = this.assembleUploadFileObject(this, msg, filename);
                 resolve(uploadedFile);
             })
@@ -154,14 +160,16 @@ export default class CameraPage extends React.Component {
         RNFS.copyFile(croppedFilename, savedFile ).then(function(){
 
           me.createNewFileInfo(savedFile).then(function(file){
-            UploadedFile.create(file).then(function(){
+
+            file.imageStatus = "draft";
+            UploadedFile.create(file).then(function(newFile){
               me.setState({ loading: false  })
               Alert.alert("File saved");
               Actions.pop();
               //Actions.pop();
 
               if(me.props.onAfterTakePicture != null)
-                me.props.onAfterTakePicture(file);
+                me.props.onAfterTakePicture(newFile);
             })
           }).catch(function(err){
             me.setState({ loading: false  })

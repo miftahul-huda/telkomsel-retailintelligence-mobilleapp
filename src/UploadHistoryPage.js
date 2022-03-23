@@ -17,6 +17,7 @@ import HttpClient from './util/HttpClient';
 import Config from './config.json';
 import fileType from 'react-native-file-type';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import Style from './style';
 
 import Util from './util/Util';
 
@@ -29,7 +30,9 @@ export default class UploadHistoryPage extends Component {
             files: [],
             options: [
                 { label: 'Poster', value: 'poster' },
-                { label: 'Store Front', value: 'storefront' }
+                { label: 'Tampak depan', value: 'storefront' },
+                { label: 'Poster A/B', value: 'poster-before-after' },
+                { label: 'Tampak depan A/B', value: 'storefront-before-after' }
             ],
             selectedOption: { label: 'Poster', value: 'poster' },
             limit: 10,
@@ -45,6 +48,15 @@ export default class UploadHistoryPage extends Component {
 
     componentDidMount(){
         var me = this;
+
+        if(this.props.imageCategory == "poster")
+            this.state.selectedOption = { label:  "Poster", value: "poster" }
+        if(this.props.imageCategory == "storefront")
+            this.state.selectedOption = { label:  "Tampak Depan", value: "storefront" }
+        if(this.props.imageCategory == "poster-before-after")
+            this.state.selectedOption = { label:  "Poster A/B", value: "poster-before-after" }
+        if(this.props.imageCategory == "storefront-before-after")
+            this.state.selectedOption = { label:  "Tampak Depan A/B", value: "storefront-before-after" }
         me.loadFiles();
 
     }
@@ -53,14 +65,55 @@ export default class UploadHistoryPage extends Component {
         
         if(this.state.selectedOption.value == "poster")
             this.loadPosterFiles();
-        else
+        if(this.state.selectedOption.value == "poster-before-after")
+            this.loadPosterBeforeAfterFiles();
+        else if(this.state.selectedOption.value == "storefront")
             this.loadStoreFrontFiles();
+        else if(this.state.selectedOption.value == "storefront-before-after")
+            this.loadStoreFrontBeforeAfterFiles();
     }
 
     loadPosterFiles()
     {
         let me = this;
-        let url = Config.API_HOST + "/report/posters/byuploader/" + GlobalSession.currentUser.email + "/" + this.state.offset + "/" + this.state.limit;
+        let url = GlobalSession.Config.API_HOST + "/report/posters/byuploader/" + GlobalSession.currentUser.email + "/" + this.state.offset + "/" + this.state.limit;
+        console.log(url);
+
+        let dt = this.state.selectedDate;
+
+        if(this.state.selectedDateAll)
+            dt = "*";
+
+        me.setState({
+            showLoading: true
+        })
+        HttpClient.post(url, { outlet: this.state.selectedOutlet.storeid, date: dt  }, function(response){
+
+            let files = response.payload;
+            console.log(files);
+            files.map(file => {
+                file.selected = false
+            });
+
+            if(files != null)
+            {
+                me.setState({
+                    files: files,
+                    totalAllData: response.allTotal[0].total,
+                    showLoading: false
+                })
+            }
+            
+            me.setState({
+                showLoading: false
+            })
+        })
+    }
+
+    loadPosterBeforeAfterFiles()
+    {
+        let me = this;
+        let url = GlobalSession.Config.API_HOST + "/report/poster-before-after/byuploader/" + GlobalSession.currentUser.email + "/" + this.state.offset + "/" + this.state.limit;
         console.log(url);
 
         let dt = this.state.selectedDate;
@@ -98,7 +151,43 @@ export default class UploadHistoryPage extends Component {
     loadStoreFrontFiles()
     {
         let me = this;
-        let url = Config.API_HOST + "/report/storefronts/byuploader/" + GlobalSession.currentUser.email + "/" + this.state.offset + "/" + this.state.limit;
+        let url = GlobalSession.Config.API_HOST + "/report/storefronts/byuploader/" + GlobalSession.currentUser.email + "/" + this.state.offset + "/" + this.state.limit;
+
+        me.setState({
+            showLoading: true
+        })
+
+        let dt = this.state.selectedDate;
+        if(this.state.selectedDateAll)
+            dt = "*";
+
+        HttpClient.post(url, { outlet: this.state.selectedOutlet.storeid, date: dt  }, function(response){
+            let files = response.payload;
+            console.log(files);
+            files.map(file => {
+                file.selected = false
+            });
+
+            if(files != null)
+            {
+                me.setState({
+                    files: files,
+                    totalAllData: response.allTotal[0].total,
+                    showLoading: false
+                })
+            }
+
+            me.setState({
+                showLoading: false
+            })
+        })
+
+    }
+
+    loadStoreFrontBeforeAfterFiles()
+    {
+        let me = this;
+        let url = GlobalSession.Config.API_HOST + "/report/storefront-before-after/byuploader/" + GlobalSession.currentUser.email + "/" + this.state.offset + "/" + this.state.limit;
 
         me.setState({
             showLoading: true
@@ -233,7 +322,7 @@ export default class UploadHistoryPage extends Component {
 
     back()
     {
-        Actions.pop();
+        Actions.reset("homePage")
     }
 
     onOptionChange(item)
@@ -247,7 +336,7 @@ export default class UploadHistoryPage extends Component {
     {
         let me = this;
         let promise = new Promise((resolve, reject) => {
-            let url = Config.API_HOST + "/uploadfile/get/" + file.id;
+            let url = GlobalSession.Config.API_HOST + "/uploadfile/get/" + file.id;
             HttpClient.get(url, function(response){
                 resolve(response.payload)
             }, function (error){
@@ -261,10 +350,18 @@ export default class UploadHistoryPage extends Component {
     viewImage(file){
 
         this.loadRemoteFile(file).then((file) => {
-            //alert(JSON.stringify(file));
-            Actions.viewImagePage({ editMode: true, file: file })
+
+            if(file.imageCategory == "poster")
+                Actions.imageHomePage( {file: file} );
+            if(file.imageCategory == "poster-before-after")
+                Actions.beforeAfterPosterHomePage( {beforeAfterID: file.beforeAfterID} );
+            else if(file.imageCategory == "storefront")
+            {
+                Actions.imageHomeStoreFrontPage({ file: file })
+                //Actions.imageInfoStoreFrontPage({ file: file, mode: 'edit' })
+            }
+
         }).catch((err) => {
-            Logging.log(err, "error", "UploadHistoryPage.viewImage().loadRemoteFile()")
             console.log(err)
             alert("Cannot load file " + file.id)
         })
@@ -303,7 +400,6 @@ export default class UploadHistoryPage extends Component {
 
     onAfterSelectStore(store)
     {
-        Actions.pop();
         this.setState({
             selectedOutlet: store
         })
@@ -360,7 +456,6 @@ export default class UploadHistoryPage extends Component {
         this.setState({
             selectedOption: imageCategory
         });
-        Actions.pop();
     }
 
     selectJenis()
@@ -390,15 +485,12 @@ export default class UploadHistoryPage extends Component {
 
         return(
           <Container>
-            <Header style={{backgroundColor: '#AA2025'}}>
+            <Header style={{backgroundColor: '#FFF'}}>
               <Body>
-                <View  style={{flex: 1, flexDirection: 'row'}}>
-                <TouchableOpacity onPress={()=> me.back()} style={{marginTop: '0%', padding: '4%'}} >
-                    <Image style={{ width: 20, height: 20}} source={require('./images/back.png')}></Image>
-                </TouchableOpacity>
-                <Image style={{ width: 30, height: 30, top: '2%'}} source={require('./images/upload_white.png')}></Image>
-                <Title style={{ marginLeft: '2%', marginTop: '3%' }}>Daftar history upload</Title>
-                </View>
+                    <View style={Style.headerHorizontalLayout} >
+                        <View style={{width: 30}}></View>
+                        <Title style={Style.headerTitle}>File-file yang sudah diupload</Title>
+                    </View>
               </Body>
             </Header>
 
@@ -546,7 +638,7 @@ export default class UploadHistoryPage extends Component {
                                                 <Text style={{ marginLeft: '15%', width: '100%', fontWeight: 'normal', textAlign: 'left' }}>Outlet: {file.store_id} {file.store_name}</Text>
                                                 <Text style={{ marginLeft: '15%', width: '100%',fontWeight: 'bold', textAlign: 'left' }}>Tanggal Upload: {Util.getDisplayDate(new Date(file.upload_date))}</Text>
                                                 <Text style={{ marginLeft: '15%', width: '100%',fontWeight: 'bold', textAlign: 'left' }}>{filename}</Text>
-                                                <Text style={{ marginLeft: '15%', width: '100%',fontWeight: 'normal', textAlign: 'left' }}>Total Package Items: {file.total}</Text>
+                                                <Text style={{ marginLeft: '15%', width: '100%',fontWeight: 'normal', textAlign: 'left' }}>Total Package Items: {file.totalItems}</Text>
                                             </View>
                                             
                                         </TouchableOpacity>

@@ -32,7 +32,7 @@ export default class SelectCatalogPage extends Component {
 
     loadPackageTypes()
     {
-        let url = Config.API_HOST + "/productcatalog/find-by-operator";
+        let url = GlobalSession.Config.API_HOST + "/productcatalog/find-by-operator";
         HttpClient.get()
     }
 

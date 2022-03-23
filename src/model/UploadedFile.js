@@ -42,14 +42,36 @@ export default class UploadedFile extends Model {
               x_resolution: Sequelize.DECIMAL,
               y_resolution: Sequelize.DECIMAL,
               operator: Sequelize.STRING,
+              operatorText: Sequelize.STRING,
               suboperator: Sequelize.STRING,
               isuploaded: Sequelize.INTEGER,
 
               isPoster: Sequelize.INTEGER,
               posterType: Sequelize.STRING,
+              posterTypeText: Sequelize.STRING,
               areaPromotion: Sequelize.STRING,
+              areaPromotionText: Sequelize.STRING,
               imageCategory: Sequelize.STRING,
-              operatorDominant: Sequelize.STRING
+              imageStatus: Sequelize.STRING,
+              operatorDominant: Sequelize.STRING,
+              operatorDominantText: Sequelize.STRING,
+              posterTheme: Sequelize.STRING,
+
+              //Information for Store front
+              productHero: Sequelize.STRING,
+              productHeroQuota: Sequelize.DECIMAL,
+              productHeroPrice: Sequelize.DECIMAL,
+              productHeroTransferPrice: Sequelize.DECIMAL,
+              productHeroValidity: Sequelize.DECIMAL,
+              productHeroCategory: Sequelize.STRING,
+              productHeroTheme: Sequelize.STRING,
+
+              imageStatus: Sequelize.STRING,
+              rejectedReason: Sequelize.STRING,
+
+              beforeAfterID: Sequelize.STRING,
+              beforeAfterType: Sequelize.STRING,
+              tag: Sequelize.STRING
             
             },
             {

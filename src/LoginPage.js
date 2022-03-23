@@ -6,7 +6,7 @@ import { Actions } from 'react-native-router-flux';
 
 import Config from './config.json';
 import HttpClient from './util/HttpClient';
-GlobalSession = require( './GlobalSession');
+import GlobalSession from './GlobalSession';
 
 import * as SQLite from "expo-sqlite";
 import Sequelize from "rn-sequelize";
@@ -15,6 +15,8 @@ import UploadedFile from './model/UploadedFile';
 import FilePackageItem from './model/FilePackageItem';
 import FilePackageSubItem from './model/FilePackageSubItem';
 import StoreFrontItem from './model/StoreFrontItem';
+import EtalaseItem from './model/EtalaseItem';
+import TotalSales from './model/TotalSales';
 
 import * as RNFS from 'react-native-fs';
 
@@ -22,6 +24,9 @@ import Logging from './util/Logging';
 import BackupRestoreLogic from './actions/BackupRestoreLogic';
 import { TouchableOpacity } from 'react-native';
 import WebView from 'react-native-webview';
+import Style from './style';
+import Util from './util/Util';
+
 
 
 const Op = Sequelize.Op;
@@ -30,29 +35,7 @@ const Model = Sequelize.Model;
 
 const FILE_STORAGE_PATH = RNFS.DownloadDirectoryPath;
 
-var sequelize = new Sequelize({
-  dialectModule: SQLite,
-  database: "retail-intelligence-v2",
-  storage: './data/retail-intelligence-v2',
-  logging: false,
-  dialectOptions: {
-    version: "1.0",
-    description: "Retail Intelligence"
-    //size: 2 * 1024 * 1024
-  }
-});
-
-var sequelize2 = new Sequelize({
-  dialectModule: SQLite,
-  database: FILE_STORAGE_PATH + "/retail-intelligence/retail-intelligence-v2",
-  dialectOptions: {
-    version: "1.0",
-    description: "Retail Intelligence"
-    //size: 2 * 1024 * 1024
-  } 
-});
-
-
+var sequelize = Util.getSequelize();
 
 
 export default class LoginPage extends Component {
@@ -81,11 +64,15 @@ export default class LoginPage extends Component {
 
   async updateData()
   {
+
+    console.log("updateData")
     try {
       await UploadedFile.initialize(sequelize, false);
       await FilePackageItem.initialize(sequelize, false);
       await FilePackageSubItem.initialize(sequelize, false);
       await StoreFrontItem.initialize(sequelize, false);
+      await EtalaseItem.initialize(sequelize, false);
+      await TotalSales.initialize(sequelize, false);
 
       await sequelize.sync();
 
@@ -99,11 +86,15 @@ export default class LoginPage extends Component {
       await FilePackageItem.drop();
       await FilePackageSubItem.drop();
       await StoreFrontItem.drop();
+      await EtalaseItem.drop();
+      await TotalSales.drop();
 
       await UploadedFile.initialize(sequelize, true);
       await FilePackageItem.initialize(sequelize, true);
       await FilePackageSubItem.initialize(sequelize, true);
       await StoreFrontItem.initialize(sequelize, true);
+      await EtalaseItem.initialize(sequelize, true);
+      await TotalSales.initialize(sequelize, true);
 
       await sequelize.sync();
       
@@ -153,17 +144,30 @@ export default class LoginPage extends Component {
 
   async componentDidMount() {
     let granted = await this.askPermission();
-
+    //await this.setUsernamePassword();
+    
     try {
-      await this.setUsernamePassword();
-    } catch (error) {
+      this.getConfig().then(async ()=>{
+        await this.setUsernamePassword();
+      }).catch(async (err)=>{
+        await this.setUsernamePassword();
+      })
       
+    } catch (error) {
+      console.log(error)
+      this.setState({
+        showIndicator: false
+      })
     }
+    
+    
+    /*
     try {
       this.checkUpdate();
     } catch (error) {
       
     }
+    */
     
     await this.updateData();
     console.log(granted);
@@ -174,8 +178,8 @@ export default class LoginPage extends Component {
   {
 
     try {
-      
-      Actions.menuPage();
+      Actions.homePage();
+      //Actions.menuPage();
     }
     catch(err)
     {
@@ -186,75 +190,136 @@ export default class LoginPage extends Component {
     
   }
 
-  async login() {
-    let url = Config.API_HOST_AUTH + "/user/login";
-    console.log(url);
-   
-    let user = { email: this.state.email, password: this.state.password};
+  async getConfig()
+  {
     var me = this;
-    me.setState({ 
-      showIndicator: true
-    })
-    HttpClient.post(url, user, async function(res){
-      if(res.success)
-      {
-        GlobalSession.currentUser = res.payload;
-        console.log("USER LOGGED IN")
-        console.log(GlobalSession.currentUser)
-        me.setState({ 
-          showIndicator: false
-        })
-
-        let sUser = { email: me.state.email, password: me.state.password};
-        let sJson = JSON.stringify(sUser);
-
-        console.log("Write to file");
-        console.log(sJson);
-
-        try {
-          await RNFS.unlink(FILE_STORAGE_PATH + "/retail-intelligence/login.txt");
-        }
-        catch(err)
-        {
-
-        }
-        RNFS.writeFile(FILE_STORAGE_PATH + "/retail-intelligence/login.txt", sJson).then(function (){
-          me.openMenu();
-
-        }).catch(function (err){
-          let ss = JSON.stringify(err);
-          Logging.log(err, "error", "LoginPage.login().HttpClient.post().RNFS.writeFile(FILE_STORAGE_PATH = /retail-intelligence/login.txt, sJson)")
-          me.openMenu();
-          //alert("Error.RNFS.writeFile :  "  + ss);   
-        })
-        
-      }
-      else {
-        let ss = JSON.stringify(res);
-        me.setState({ 
-          showIndicator: false
-        });
-        alert("Login invalid")
-        //alert( res.message);
-      }
-      
-    }, function(err){
-      me.setState({ 
-        showIndicator: false
+    let promise = new Promise((resolve, reject)=>{
+      let url = Config.API_HOST + "/application/get-by-version/" + Config.VERSION;
+      me.setState({
+        showIndicator: true
       })
-      let ss = JSON.stringify(err);
-      alert("Error login.post : " + ss);
-      Logging.log(ss, "error")
-    });
+      try
+      {
+
+        console.log("url")
+        console.log(url)
+        HttpClient.get(url, function(response){
+          
+          console.log("getConfig()")
+          console.log(response)
+  
+          if(response.success == true && response.payload != null)
+          {
+            GlobalSession.Config = JSON.parse( response.payload.appConfig);
+            //console.log(GlobalSession.Config.API_HOST)
+            //console.log(GlobalSession.Config)
+            resolve();
+          }
+          else
+          {
+            alert("Konfigurasi aplikasi gagal. Hubungi support.")
+            reject();
+          }
+
+          me.setState({
+            showIndicator: false
+          })
+          
+        }, function(err){
+          me.setState({
+            showIndicator: false
+          })
+          reject(err)
+        })
+      }
+      catch(err)
+      {
+        this.setState({
+          showIndicator: false
+        })
+        reject(err)
+      }
+
+    })
+
+    return promise;
+  }
+
+  async login() {
+
+    this.getConfig().then(()=>{
+      let url = GlobalSession.Config.API_HOST_AUTH + "/user/login";
+      console.log(url);
+      let user = { email: this.state.email, password: this.state.password};
+      var me = this;
+      me.setState({ 
+        showIndicator: true
+      })
+      HttpClient.post(url, user, async function(res){
+        if(res.success)
+        {
+          GlobalSession.currentUser = res.payload;
+          me.setState({ 
+            showIndicator: false
+          })
+  
+          let sUser = { email: me.state.email, password: me.state.password};
+          let sJson = JSON.stringify(sUser);
+  
+  
+          try {
+            await RNFS.unlink(FILE_STORAGE_PATH + "/retail-intelligence/login.txt");
+          }
+          catch(err)
+          {
+  
+          }
+          RNFS.writeFile(FILE_STORAGE_PATH + "/retail-intelligence/login.txt", sJson).then(function (){
+            me.openMenu();
+  
+          }).catch(function (err){
+            let ss = JSON.stringify(err);
+            Logging.log(err, "error", "LoginPage.login().HttpClient.post().RNFS.writeFile(FILE_STORAGE_PATH = /retail-intelligence/login.txt, sJson)")
+            me.openMenu();
+            //alert("Error.RNFS.writeFile :  "  + ss);   
+          })
+          
+        }
+        else {
+          let ss = JSON.stringify(res);
+          me.setState({ 
+            showIndicator: false
+          });
+          alert("Login invalid")
+          //alert( res.message);
+        }
+        
+      }, function(err){
+        me.setState({ 
+          showIndicator: false
+        })
+        let ss = JSON.stringify(err);
+        alert("Error login.post : " + ss);
+        Logging.log(ss, "error")
+      });
+    }).catch((err)=>{
+      console.log("getConfig() failed")
+      console.log(err)
+      alert("Jaringan internet sepertinya bermasalah. Pastikan anda bisa menjalin koneksi ke internet.")
+    })
+    
+
   }
 
   setUsernamePassword()
   {
     var me = this;
     RNFS.readFile(FILE_STORAGE_PATH + "/retail-intelligence/login.txt").then(function (response){
-      console.log("setUsernamePassword")
-      console.log(response);
+
       let data = JSON.parse(response);
+      console.log("Data")
+      console.log(data);
+
       me.setState({
         ...me.state,
         email: data.email,
@@ -300,44 +365,34 @@ export default class LoginPage extends Component {
     return  null;
   }
 
+
+
   render(){
 
     let secure = this.state.secure;
     return(
       <Container>
-        <Header style={{backgroundColor: '#AA2025'}}>
+        <Header style={{backgroundColor: '#FFF', borderWidth: 0}}>
           <Body>
-            <Title style={ { width: '100%', textAlign: 'center' }}>Retail Intelligence</Title>
+            <Title style={ { width: '100%', textAlign: 'left', color: '#000' }}>Masuk Aplikasi</Title>
           </Body>
         </Header>
         <Content padder >
-          <ImageBackground source={require('./images/background.png')} style={{ width: '100%', height: '100%' }}>
-            <View>
-              
+          
+            <View style={{width: '100%', marginTop: '25%', alignSelf: 'center'}}>
+              <Image source={require('./images/logo.png')} style={{width: '60%', alignSelf: 'center'}} resizeMode='contain'></Image>
+              <Text style={{alignSelf: 'center'}}>{Config.VERSION} {Config.ENVIRONMENT}</Text>
             </View>
-
-            <View  style={{ flex:1, flexDirection: 'column', width:'100%', justifyContent: 'center',alignItems: "center"  }}>
-              <Image  source={require('./images/telkomsel-logo.png')} resizeMode="contain"
-              style={{ width: '50%', marginTop: '0%' }}></Image>
-              <Text style={{ marginTop: '-12%' }}>Version {Config.VERSION} {Config.ENVIRONMENT}</Text>
-            </View>
-            {
-                (this.state.updateApp) ? <WebView style={{ width: '100%', height: 130 }} source={{ html: this.state.message}}></WebView> : null
-            }
-            { (this.state.showIndicator) ? 
-            <ActivityIndicator size="large" color="#000"></ActivityIndicator> : <></>
-            }
-            <Form style={{ marginTop: '10%' }}>
+            <Form style={{ marginTop: '10%', padding: 20 }}>
               <View>
-                <Label>Username</Label>
+                <Label style={{color: '#000'}}>Nama pengguna</Label>
                 <View style={{height: 5}}></View>
                 <Input style={{ borderWidth: 1, borderRadius: 10, borderColor: '#ccc', color: '#666', paddingLeft: 10}} value={this.state.email} onChangeText={value => { console.log(value); this.setState({ email: value } ) }}/>
               </View>
               <View style={{height: 10}} ></View>
               <View style={{ flex:1, flexDirection: 'column', justifyContent: 'flex-start'}}>
                 
-                <Label>Password</Label>
-
+                <Label style={{color: '#000'}}>Kata sandi</Label>
                 <View >
                   <Input  style={{ borderWidth: 1, borderRadius: 10, borderColor: '#ccc', color: '#666', paddingLeft: 10}} 
                   secureTextEntry={this.state.secure}  value={this.state.password} onChangeText={(value)=> this.setState({ password: value } )}/>
@@ -355,22 +410,25 @@ export default class LoginPage extends Component {
                 
               </View>
             </Form>
-            <View style={{height: 30}}></View>
+            
+            <View style={{height: 30}}>
+            {
+              (this.state.showIndicator == true) ? <ActivityIndicator size="large" color="#ff0000"></ActivityIndicator> : <></>
+            }
+             
+            </View>
 
-            <Button style = {{alignSelf: 'center', margin: 5, 
-            width: '100%', backgroundColor: '#AA2025', borderRadius: 10}}
+            <Button style = {Style.buttonRed}
               onPress= {() => { this.login(); }}>
 
-                <View style={{flex: 1, flexDirection: 'row', width:'100%', alignSelf: 'center', alignItems:'center', justifyContent:'center',}}>
-                  <Image source={require('./images/login_white.png')} />
-                  <View style={{width: '2%'}}></View>
-                  <Text style={{ color: '#ffffff'}}>Login</Text>
+                <View style={Style.buttonContentDark}>
+                  <Text style={Style.textWhite}>Masuk</Text>
                 </View>
               
             </Button>
             <View style={{height: 150}}></View>
 
-          </ImageBackground>
+          
          </Content>
       </Container>
     );

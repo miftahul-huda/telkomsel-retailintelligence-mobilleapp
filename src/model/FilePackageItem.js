@@ -26,7 +26,11 @@ export default class FilePackageItem extends Model {
                 campaignTheme: Sequelize.STRING,
                 itemCategory: Sequelize.STRING,
                 itemCategoryText: Sequelize.STRING,
-                tempid: Sequelize.STRING
+                tempid: Sequelize.STRING,
+                subitempackage: Sequelize.STRING,
+                subitempackageitems: Sequelize.STRING,
+
+                imageStatus: Sequelize.STRING,
             },
             {
               sequelize,

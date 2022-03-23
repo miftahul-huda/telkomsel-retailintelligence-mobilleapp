@@ -7,10 +7,9 @@ import { View, Container, Content, Text, Card, Header, Footer, Body, Title,
     Item, CardItem, Icon, Button } from 'native-base';
   
 import { Actions } from 'react-native-router-flux';
-
-import Config from './config.json';
+import Style from './style';
 import HttpClient from './util/HttpClient';
-GlobalSession = require( './GlobalSession');
+import GlobalSession from './GlobalSession';
 
 import * as SQLite from "expo-sqlite";
 import Sequelize from "rn-sequelize";
@@ -40,15 +39,14 @@ export default class ImageOrientationInputPage extends Component {
         var me = this;
         return(
             <Container>
-            <Header style={{backgroundColor: '#AA2025'}}>
-              <Body>
-                <View  style={{flex: 1, flexDirection: 'row'}}>
-                <TouchableOpacity onPress={()=> this.back()} style={{marginTop: '0%', padding: '4%'}} >
-                    <Image style={{ width: 20, height: 20}} source={require('./images/back.png')}></Image>
-                </TouchableOpacity>
-                <Title style={{ marginTop: '3%' }}>Orientation info</Title>
+            <Header style={{backgroundColor: '#FFF'}}>
+                <View  style={Style.headerHorizontalLayout}>
+                        <TouchableOpacity onPress={()=> me.back()}>
+                            <Image style={Style.headerImage} resizeMode='contain' source={require('./images/back-dark.png')}></Image>
+                        </TouchableOpacity>
+                        <View style={{width: 10}}></View>
+                        <Title style={Style.headerTitle}>Orientasi</Title>
                 </View>
-              </Body>
             </Header>
             <Content padder>
                 <View style={{ flex: 1, height: '100%', padding: '5%' }}>

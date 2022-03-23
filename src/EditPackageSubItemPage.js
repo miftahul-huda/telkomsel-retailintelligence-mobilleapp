@@ -17,10 +17,10 @@ import InternetQuota from './components/InternetQuota';
 import VoiceQuota from './components/VoiceQuota';
 import SmsQuota from './components/SmsQuota';
 import ValidityView from './components/ValidityView';
+import Style from './style';
 
-import Config from './config.json';
 import HttpClient from './util/HttpClient';
-GlobalSession = require( './GlobalSession');
+import GlobalSession from './GlobalSession';
 
 import Logging from './util/Logging';
 
@@ -61,6 +61,8 @@ export default class EditPackageSubItemPage extends React.Component {
             tableData: [['', '', '']],
             widthArr: [ 170, 170, 50],
         }
+
+        
     }
 
     setNull2Zero()
@@ -73,7 +75,8 @@ export default class EditPackageSubItemPage extends React.Component {
 
     componentDidMount()
     {
-        
+        console.log("this.state.item")
+        console.log(this.state.item)
         this.setNull2Zero();
         this.handleItemSubCategories(function(){
 
@@ -101,7 +104,7 @@ export default class EditPackageSubItemPage extends React.Component {
 
     getAllSubCategories(callback)
     {
-        let url = Config.API_HOST + "/itemsubcategory";
+        let url = GlobalSession.Config.API_HOST + "/itemsubcategory";
         console.log("URL: " + url)
         HttpClient.get( url, function(response)
         {
@@ -138,7 +141,7 @@ export default class EditPackageSubItemPage extends React.Component {
 
     getAllSubCategorTypes(itemSubCategoryId, callback)
     {
-        let url = Config.API_HOST + "/itemsubcategorytype/itemsubcategory/" + itemSubCategoryId;
+        let url = GlobalSession.Config.API_HOST + "/itemsubcategorytype/itemsubcategory/" + itemSubCategoryId;
         console.log(url)
         HttpClient.get( url, function(response)
         {
@@ -282,8 +285,8 @@ export default class EditPackageSubItemPage extends React.Component {
             res = { success: false, message: "Harap isi tipe kuota" }
         if(this.state.item.quotaCategory == null || this.state.item.quotaCategory == "")
             res = { success: false, message: "Harap pilih kuota" }
-        if(this.state.item.quotaCategory != null && this.state.item.quotaCategory.indexOf("unlimited") != -1)
-            res = { success: false, message: "Harap isi kuota untuk paket tersebut" }
+        //if(this.state.item.quotaCategory != null && this.state.item.quotaCategory.indexOf("unlimited") != -1)
+        //    res = { success: false, message: "Harap isi kuota untuk paket tersebut" }
 
         return res;
 
@@ -406,6 +409,7 @@ export default class EditPackageSubItemPage extends React.Component {
 
     render() {
 
+        var me = this;
         this.setQuotaAppType()
         console.log("this.state.quotaAppType")
         console.log(this.state.quotaAppType)
@@ -414,15 +418,14 @@ export default class EditPackageSubItemPage extends React.Component {
         //console.log(this.state.quotaAppTypes.length)
         return(
             <Container>
-            <Header style={{backgroundColor: '#AA2025'}}>
-                <Body>
-                <View  style={{flex: 1, flexDirection: 'row'}}>
-                <TouchableOpacity onPress={()=> this.back()} style={{marginTop: '0%', padding: '4%'}} >
-                    <Image style={{ width: 20, height: 20}} source={require('./images/back.png')}></Image>
-                </TouchableOpacity>
-                <Title style={{ marginTop: '3%' }}>{this.state.title} Sub Item</Title>
+            <Header style={{backgroundColor: '#FFF'}}>
+                <View  style={Style.headerHorizontalLayout}>
+                        <TouchableOpacity onPress={()=> me.back()}>
+                            <Image style={Style.headerImage} resizeMode='contain' source={require('./images/back-dark.png')}></Image>
+                        </TouchableOpacity>
+                        <View style={{width: 10}}></View>
+                        <Title style={Style.headerTitle}>{this.state.title} Sub Item Paket</Title>
                 </View>
-                </Body>
             </Header>
 
             <Content padder>
@@ -492,15 +495,22 @@ export default class EditPackageSubItemPage extends React.Component {
                     <View style={{marginTop: '10%'}}>
                         <Label>* Harus diisi</Label>
                     </View>
-
+                    <View style={{height: 15}}></View>
+                    <View style={{padding: '2%'}}>
+                        <Button style={Style.buttonRed} onPress={()=>this.ok()}>
+                            <View style={{ alignItems: 'center', width: '100%' }}>
+                                <Text>Ok</Text>
+                            </View>
+                        </Button>
+                        <Button style={Style.button} onPress={()=>this.back()}>
+                            <View style={{ alignItems: 'center', width: '100%' }}>
+                                <Text style={{color: '#666'}}>Batal</Text>
+                            </View>
+                        </Button>
+                    </View>
 
                 </View>
             </Content>
-            <Footer style={{backgroundColor: '#AA2025'}}>
-                <TouchableOpacity onPress={this.ok.bind(this)} style={{marginTop: '0%', padding: '3%'}}>
-                    <Image  onPress={this.ok.bind(this)} source={require('./images/ok_white.png')} />
-                </TouchableOpacity>
-            </Footer>
             </Container>
         );
     }

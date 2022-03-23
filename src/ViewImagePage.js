@@ -10,12 +10,13 @@ import { Image, View, ScrollView, TouchableOpacity, Alert,ActivityIndicator, Bac
 import { Actions } from 'react-native-router-flux';
 import UploadedFile from './model/UploadedFile';
 import * as RNFS from 'react-native-fs';
-
+import SharedPage from './SharedPage';
+import Style from './style';
 import Config from './config.json'
 import HttpClient from './util/HttpClient'
 GlobalSession = require( './GlobalSession');
 
-export default class ViewImagePage extends React.Component {
+export default class ViewImagePage extends SharedPage {
     constructor(props) {
         super(props);
         this.state = {
@@ -131,13 +132,14 @@ export default class ViewImagePage extends React.Component {
 
         return(
             <Container>
-              <Header style={{backgroundColor: '#AA2025'}}>
+              <Header style={{backgroundColor: '#FFF'}}>
                 <Body>
-                  <View  style={{flex: 1, flexDirection: 'row'}}>
-                  <TouchableOpacity onPress={()=> this.back()} style={{marginTop: '0%', padding: '4%'}} >
-                      <Image style={{ width: 20, height: 20}} source={require('./images/back.png')}></Image>
-                  </TouchableOpacity>
-                  <Title style={{ marginTop: '3%' }}>Edit file</Title>
+                  <View style={Style.headerHorizontalLayout}>
+                    <TouchableOpacity onPress={()=> this.back()} >
+                        <Image style={Style.headerImage} source={require('./images/back-dark.png')} resizeMode='contain'></Image>
+                    </TouchableOpacity>
+                    <View style={{width: 10}}></View>
+                    <Title style={Style.headerTitle}>Edit file</Title>
                   </View>
                 </Body>
               </Header>
@@ -160,19 +162,19 @@ export default class ViewImagePage extends React.Component {
                 
 
               </Content>
-              <Footer style={{backgroundColor: '#AA2025', padding: '3%'}}>
+              <Footer style={{backgroundColor: '#FFF', padding: '3%'}}>
                   { (this.props.editMode) ?
                   <>
                   <TouchableOpacity onPress={this.crop.bind(this)} >
-                      <Image source={require('./images/crop_white.png')} />
+                      <Image source={require('./images/crop.png')} />
                   </TouchableOpacity>
                   <View style={{width: '15%'}}  />
                   <TouchableOpacity onPress={this.addInfo.bind(this, true)}>
-                      <Image source={require('./images/upload_white.png')} />
+                      <Image source={require('./images/upload.png')} />
                   </TouchableOpacity>
                   </>
                   : <TouchableOpacity onPress={this.addInfo.bind(this, false)}>
-                        <Image source={require('./images/info_white.png')} />
+                        <Image source={require('./images/info.png')} />
                     </TouchableOpacity> }
                       
               </Footer>

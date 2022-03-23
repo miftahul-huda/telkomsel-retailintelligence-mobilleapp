@@ -20,7 +20,9 @@ export default class FilePackageSubItem extends Model {
                 validityType: Sequelize.STRING,
                 quotaUsage: Sequelize.STRING,
                 additionalNote: Sequelize.STRING,
-                packageItemId: Sequelize.INTEGER
+                packageItemId: Sequelize.INTEGER,
+
+                imageStatus: Sequelize.STRING,
             
             },
             {

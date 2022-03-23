@@ -3,11 +3,12 @@ import Sequelize from "rn-sequelize";
 const Op = Sequelize.Op;
 const Model = Sequelize.Model;
 
-export default class FilePackageItem extends Model {
+export default class StoreFrontItem extends Model {
     static async initialize(sequelize, force=false) {
         let o = await super.init(
             {
                 operator:  Sequelize.STRING,
+                operatorText:  Sequelize.STRING,
                 percentage: Sequelize.DECIMAL,
                 productHero: Sequelize.STRING,
                 gbmain: Sequelize.DECIMAL,
@@ -26,6 +27,8 @@ export default class FilePackageItem extends Model {
                 category: Sequelize.STRING,
                 campaignTheme: Sequelize.STRING,
                 upload_file_id: Sequelize.INTEGER,
+
+                imageStatus: Sequelize.STRING,
             
             },
             {

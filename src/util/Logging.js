@@ -1,6 +1,5 @@
 import HttpClient from './HttpClient';
 GlobalSession = require( '../GlobalSession');
-import Config from '../config.json';
 
 import base64 from 'react-native-base64'
 
@@ -38,8 +37,7 @@ export default class Logging
         module = Logging.encode64(module);
             
         let user = GlobalSession.currentUser;
-        console.log("LOG.user");
-        console.log(user);
+
 
         if(user == null)
             user = {};
@@ -47,7 +45,7 @@ export default class Logging
 
         let log  = { logDate: Logging.getCurrentDate(), logApplication: 'Telkomsel-Retail-Intelligence', logModule: module, logType: type,   logContent: message, username: user.email  }
 
-        let url = Config.API_HOST_LOG  + "/logger/create";
+        let url = GlobalSession.Config.API_HOST_LOG  + "/logger/create";
         HttpClient.post(url, log, function(){
 
         }, function(error){

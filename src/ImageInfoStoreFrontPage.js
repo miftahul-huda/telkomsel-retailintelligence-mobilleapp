@@ -12,10 +12,8 @@ import { Actions } from 'react-native-router-flux';
 import UploadedFile from './model/UploadedFile';
 import StoreFrontItem from './model/StoreFrontItem';
 import DropDownPicker from 'react-native-dropdown-picker';
-
-import Config from './config.json';
 import HttpClient from './util/HttpClient';
-GlobalSession = require( './GlobalSession');
+import GlobalSession from './GlobalSession';
 
 import Logging from './util/Logging';
 
@@ -72,7 +70,7 @@ export default class ImageInfoStoreFrontPage extends React.Component {
     {
         let me = this;
         let promise = new Promise((resolve, reject) => {
-            let url = Config.API_HOST + "/uploadfile/get/" + file.id;
+            let url = GlobalSession.Config.API_HOST + "/uploadfile/get/" + file.id;
             HttpClient.get(url, function(response){
                 resolve(response.payload)
             }, function (error){
@@ -101,7 +99,7 @@ export default class ImageInfoStoreFrontPage extends React.Component {
 
     getOperators(){
         let promise = new Promise((resolve, reject)=>{
-            let url = Config.API_HOST + "/operator";
+            let url = GlobalSession.Config.API_HOST + "/operator";
             
             HttpClient.get(url, function(res){
                 
@@ -116,7 +114,7 @@ export default class ImageInfoStoreFrontPage extends React.Component {
 
     getSubOperators(operator_id){
         let promise = new Promise((resolve, reject)=>{
-            let url = Config.API_HOST + "/suboperator/" + operator_id;
+            let url = GlobalSession.Config.API_HOST + "/suboperator/" + operator_id;
             HttpClient.get(url, function(res){
                 resolve(res.payload);
             });
@@ -126,7 +124,7 @@ export default class ImageInfoStoreFrontPage extends React.Component {
 
     getStores(){
         let promise = new Promise((resolve, reject)=>{
-            let url = Config.API_HOST + "/store";
+            let url = GlobalSession.Config.API_HOST + "/store";
             HttpClient.get(url, function(res){
                 resolve(res.payload);
             }, function(err){
@@ -228,7 +226,7 @@ export default class ImageInfoStoreFrontPage extends React.Component {
     {
         console.log("initStoreFrontItemsFromRemote")
         let tempid = me.getMaxTempId();
-        let url = Config.API_HOST + "/storefrontitem/file/" + me.state.file.id;
+        let url = GlobalSession.Config.API_HOST + "/storefrontitem/file/" + me.state.file.id;
         HttpClient.get(url, function(response){
             let items = response.payload;
             items.forEach((item) => { 
@@ -320,26 +318,37 @@ export default class ImageInfoStoreFrontPage extends React.Component {
     }
 
     callOperatorFilter(me, uri,  callback, callbackError){
-        var url = Config.API_HOST_DOMINANT_OPERATOR;
-        uri = uri.replace("https://storage.googleapis.com/", 'gs://')
-        var data = { url: uri }
+        var url = GlobalSession.Config.API_HOST_DOMINANT_OPERATOR;
+        //uri = uri.replace("https://storage.googleapis.com/", 'gs://')
+
+        uri = encodeURIComponent(uri)
+        url = url + "/" + uri
 
         console.log("Operator Filter")
         console.log(url);
-        console.log(data);
 
-        HttpClient.post(url, data, function(res){
+        HttpClient.get(url,  function(res){
 
-            if(callback !=null)
-                callback(res);
+
+            if(res.success)
+            {
+                if(callback !=null)
+                    callback(res.payload);
+            }
+            else
+            {
+                console.log("Retrieve operator error")
+                console.log(res.error);
+                if(callbackError != null)
+                    callbackError(me, res.error);
+            }
+
             
         }, function(err){
             console.log("Retrieve operator error")
             console.log(err);
-            
-
             if(callbackError != null)
-                callbackError(me, uri);
+                callbackError(me, err);
             Logging.log(err, "error", "ImageInfoStoreFrontPage.callOperatorFilter().HttpClient.post() " + uri)
         });
     }
@@ -348,7 +357,7 @@ export default class ImageInfoStoreFrontPage extends React.Component {
     {
         var selOp = operators[0];
         operators.forEach(function(item){
-            if(item[1] > selOp[1])
+            if(item.percentage > selOp.percentage)
                 selOp = item;
         });
         return selOp;
@@ -367,7 +376,7 @@ export default class ImageInfoStoreFrontPage extends React.Component {
                 let resop = me.getTheLargestCoverageOperator(me, operators);
                 let selResop = null;
                 me.state.operators.forEach(function(operator, idx ){
-                    if(operator.value.toLowerCase().trim() == resop[0].toLowerCase().trim())
+                    if(operator.value.toLowerCase().trim() == resop.operator.toLowerCase().trim())
                     {
                         selResop = operator;
                     }
@@ -512,7 +521,7 @@ export default class ImageInfoStoreFrontPage extends React.Component {
 
     uploadImageInfo(me, uploaded_filename, item, callback, callbackError){
 
-        var url = Config.API_HOST + "/uploadfile/create";
+        var url = GlobalSession.Config.API_HOST + "/uploadfile/create";
         me.state.file.upload_date = me.getCurrentDate();
         me.state.file.uploaded_by_email = GlobalSession.currentUser.email;
         me.state.file.uploaded_by_fullname = GlobalSession.currentUser.firstname + " " + GlobalSession.currentUser.lastname;
@@ -571,7 +580,7 @@ export default class ImageInfoStoreFrontPage extends React.Component {
 
     uploadStoreFrontItem(me, item, callback, callbackError)
     {
-        var url = Config.API_HOST + "/storefrontitem/create"; 
+        var url = GlobalSession.Config.API_HOST + "/storefrontitem/create"; 
         console.log("uploading storefront item");
         
         var newItem = JSON.stringify(item);
@@ -612,7 +621,7 @@ export default class ImageInfoStoreFrontPage extends React.Component {
     uploadToServer(callback, callbackError)
     {
         var me = this;
-        var url = Config.API_HOST_UPLOAD + "/upload/gcs/" + Config.STOREFRONT_UPLOAD_PATH;
+        var url = GlobalSession.Config.API_HOST_UPLOAD + "/upload/gcs/" + GlobalSession.Config.STOREFRONT_UPLOAD_PATH;
         console.log(url);
         HttpClient.upload(url, this.state.file.filename, function(res){
             console.log("done upload image");
@@ -786,7 +795,7 @@ export default class ImageInfoStoreFrontPage extends React.Component {
     //Delete remote package items
     deleteRemotePackageItems(callback, callbackError)
     {
-        var url = Config.API_HOST + "/storefrontitem/delete-by-uploadid/" + this.state.file.id;
+        var url = GlobalSession.Config.API_HOST + "/storefrontitem/delete-by-uploadid/" + this.state.file.id;
         HttpClient.get(url, function(response){
             if(callback != null)
                 callback(response);
@@ -801,7 +810,7 @@ export default class ImageInfoStoreFrontPage extends React.Component {
     saveUpdateRemote(callback, callbackError)
     {
         var me= this;
-        var url = Config.API_HOST + "/uploadfile/update/" + me.state.file.id;
+        var url = GlobalSession.Config.API_HOST + "/uploadfile/update/" + me.state.file.id;
         me.state.file.updatedAt = me.getCurrentDate();
 
         var newFile = JSON.stringify(me.state.file);
@@ -948,7 +957,7 @@ export default class ImageInfoStoreFrontPage extends React.Component {
 
     uploadToGcs(orientation, callback, callbackError)
     {
-        var url = Config.API_HOST_UPLOAD + "/upload/gcs/telkomsel-retail-intelligence/retail-intelligence-bucket/temporary";
+        var url = GlobalSession.Config.API_HOST_UPLOAD + "/upload/gcs/telkomsel-retail-intelligence/retail-intelligence-bucket/temporary";
         console.log(url);
         HttpClient.upload(url, this.state.file.filename, function(res){
             console.log("done upload image");

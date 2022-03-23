@@ -7,7 +7,7 @@ import { Container, Content, Text, Card, Header, Footer, Body, Title,
   Item, CardItem, Icon, Button } from 'native-base';
 
 
-import { Image, View, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { Image, View, ScrollView, TouchableOpacity, Alert, Linking } from 'react-native';
 import { Actions } from 'react-native-router-flux';
 import UploadedFile from './model/UploadedFile';
 import FilePackageItem from './model/FilePackageItem';
@@ -27,18 +27,22 @@ const Model = Sequelize.Model;
 import Logging from './util/Logging';
 
 import BackupRestoreLogic from './actions/BackupRestoreLogic';
+import Style from './style';
+import SharedPage from './SharedPage';
+import LabelInput from './components/LabelInput';
 
 
 const FILE_STORAGE_PATH = RNFS.DownloadDirectoryPath;
 
-export default class ProfilePage extends Component {
+export default class ProfilePage extends SharedPage {
     constructor(props){
         super(props);
         this.state = {
             fullName: '',
             email: '',
             country: '',
-            city: ''
+            city: '',
+            area: ''
         }
     }
 
@@ -65,7 +69,8 @@ export default class ProfilePage extends Component {
               fullName: user.firstname + " " + user.lastname,
               email: user.email,
               country: country,
-              city: city
+              city: city,
+              area: user.area
           })
         }
         catch (e){
@@ -147,7 +152,7 @@ export default class ProfilePage extends Component {
     logout()
     {
       GlobalSession.currentUser = null;
-        Actions.popTo('loginPage');
+      Actions.reset("loginPage");
     }
 
     back() {
@@ -220,69 +225,54 @@ export default class ProfilePage extends Component {
 
     }
 
+    downloadTutorial()
+    {
+      let path = "retina-app-resources/tutorial.pdf";
+      path = encodeURIComponent(path);
+
+      let url = GlobalSession.Config.API_HOST_UPLOAD + "/upload/gcs/download/" + GlobalSession.Config.GCS_PROJECT + "/" + GlobalSession.Config.GCS_APP_BUCKET + "/" + path;
+      url = "https://storage.googleapis.com/retail-intelligence-bucket/retina-app-resources/tutorial.pdf"      
+
+      let gurl = "http://docs.google.com/gview?embedded=true&url=https://storage.googleapis.com/retail-intelligence-bucket/retina-app-resources/tutorial.pdf";
+      console.log(gurl);
+
+      Linking.openURL(url)
+      //Actions.reset("webPage", { url: url, title: 'Tutorial Retina v.' + GlobalSession.Config.VERSION, type: "pdf"  })
+    }
+
     render() 
     {
         return(
             <Container>
-            <Header style={{backgroundColor: '#AA2025'}}>
-              <Body>
-                <View  style={{flex: 1, flexDirection: 'row'}}>
-                <TouchableOpacity onPress={()=> this.back()} style={{marginTop: '0%', padding: '4%'}} >
-                    <Image style={{ width: 20, height: 20}} source={require('./images/back.png')}></Image>
-                </TouchableOpacity>
-                <Image style={{ width: 30, height: 30, top: '2%'}} source={require('./images/top-profile-white.png')}></Image>
-                <Title style={{ marginLeft: '2%',marginTop: '3%' }}>Profile</Title>
+            <Header style={{backgroundColor: '#FFF', height: 80}}>
+                <View  style={Style.headerHorizontalLayout}>
+
+                            <Image style={{height: 40, width:40}} resizeMode='contain' source={require('./images/profile-user.png')}></Image>
+  
+                        <View style={{width: '5%'}}></View>
+                        <View style={{marginTop: '0%'}}>
+                          <Title style={{ color: '#666' }}>{this.state.fullName}</Title>
+                          <Text style={Style.contentLight}>{this.state.area}</Text>
+                        </View>
                 </View>
-              </Body>
             </Header>
-            <Content padder>
-            <ImageBackground source={require('./images/background.png')} style={{ width: '100%', height: '100%' }}>
-                <View style={{ flex: 1, height: '100%', padding: '5%' }}>
-                        <Text style={{ fontWeight: 'bold', paddingBottom: 4 }}>Nama lengkap</Text>
-                        <Text style={{ fontWeight: 'normal' }}>
-                            {this.state.fullName}
-                        </Text>
-                        <View style={{height: 18}}></View>
-                        <Text style={{ fontWeight: 'bold', paddingBottom: 4 }}>Email</Text>
-                        <Text style={{ fontWeight: 'normal' }}>
-                            {this.state.email}
-                        </Text>
-
-                        <View style={{height: 18}}></View>
-                        <Text style={{ fontWeight: 'bold', paddingBottom: 4 }}>Negara</Text>
-                        <Text style={{ fontWeight: 'normal' }}>
-                            {this.state.country}
-                        </Text>
-
-                        <View style={{height: 18}}></View>
-                        <Text style={{ fontWeight: 'bold', paddingBottom: 4 }}>Kota</Text>
-                        <Text style={{ fontWeight: 'normal' }}>{this.state.city}</Text>
+            <Content  style={{backgroundColor: '#eee'}}>
+                <View style={{height: 30}}></View>
+                <View style={{ flex: 1, height: '100%', padding: '5%', backgroundColor: '#FFF', height:'auto' }}>
+                  <TouchableOpacity onPress={()=>this.downloadTutorial()}>
+                    <LabelInput text="Bantuan" subtext="Tutorial penggunaan retina"></LabelInput>
+                    <View style={Style.horizontalLayout}>
+                      <Image source={require('./images/pdf.png')}></Image>
+                      <View style={{width: '5%'}}></View>
+                      <Text style={{marginTop: '1%'}}>Download Tutorial Retina v.{GlobalSession.Config.VERSION}</Text>
+                    </View>
+                  </TouchableOpacity>
 
                 </View>
 
-                <View style={{height: '20%'}}>
+                <View style={{height: 20}}></View>
 
-                </View>
-
-
-                <Button style = {{alignSelf: 'center', margin:5, borderRadius: 10, 
-                width: '80%', backgroundColor: '#AA2025'}}
-                    onPress= {() => { this.backup2(); }}>
-
-                    <View style={{ flex:1, flexDirection: 'row', width: '100%', alignSelf: 'center', alignItems: 'center', justifyContent: 'center'}}>
-                      <Image source={require('./images/backup_white.png')} style={{ height: 30, width: 30 }}></Image>
-                      <Text style={{ color: '#ffffff', textAlign: 'center' }}>Backup</Text>
-                    </View>
-                </Button>
-                <Button style = {{alignSelf: 'center', margin: 5, borderRadius: 10, 
-                width: '80%', backgroundColor: '#AA2025'}}
-                    onPress= {() => { this.restore2(); }}>
-                    <View style={{ flex:1, flexDirection: 'row', width: '100%', alignSelf: 'center', alignItems: 'center', justifyContent: 'center'}}>
-                      <Image source={require('./images/restore_white.png')} style={{ height: 30, width: 30 }}></Image>
-                      <Text style={{ color: '#ffffff', textAlign: 'center' }}>Restore</Text>
-                    </View>
-                </Button>
-                <Button style = {{alignSelf: 'center', margin:5, borderRadius: 10, 
+                <Button style = {{display: 'none', alignSelf: 'center', margin:5, borderRadius: 10, 
                 width: '80%', backgroundColor: '#AA2025'}}
                     onPress= {() => { this.clearUploadedPhoto(); }}>
                     <View style={{ flex:1, flexDirection: 'row', width: '100%', alignSelf: 'center', alignItems: 'center', justifyContent: 'center'}}>
@@ -290,15 +280,17 @@ export default class ProfilePage extends Component {
                       <Text style={{ color: '#ffffff', textAlign: 'center' }}>Hapus Uploaded Foto</Text>
                     </View>
                 </Button>
-                <View style={{height: 150}}></View>
+                <Button style={Style.button} onPress={()=>this.logout()}>
+                    <View style={{ alignItems: 'center', width: '100%' }}>
+                        <Text style={{color: '#666'}}>Keluar</Text>
+                    </View>
+                </Button>
 
-            </ImageBackground>
+
             </Content>
-            <Footer style={{backgroundColor: '#AA2025'}}>
-                <TouchableOpacity onPress={this.logout.bind(this)} style={{marginTop: '0%', padding: '3%'}} >
-                    <Image source={require('./images/logout_white.png')} />
-                </TouchableOpacity>
-            </Footer>
+                {
+                  this.getFooter(3)
+                }
             </Container>
         )
 

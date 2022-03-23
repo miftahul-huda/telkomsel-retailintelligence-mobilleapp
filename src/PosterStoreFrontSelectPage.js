@@ -18,6 +18,8 @@ import Config from './config.json';
 import HttpClient from './util/HttpClient';
 GlobalSession = require( './GlobalSession');
 
+import Style from './style';
+
 export default class PosterStoreSelectPage extends Component {
     constructor(props)
     {
@@ -26,13 +28,23 @@ export default class PosterStoreSelectPage extends Component {
 
     selectCategory(cat)
     {
+        Actions.pop();
         if(this.props.onAfterSelectImageCategory != null)
             this.props.onAfterSelectImageCategory(cat);
+        
     }
 
     back()
     {
-        Actions.pop();
+        //Actions.pop();
+        //Actions.refresh({ data: "back"});
+        if(this.props.onBack != null)
+        {
+            this.props.onBack();
+            Actions.pop();
+        }
+        else
+            Actions.reset("homePage")
     }
 
     render(){
@@ -40,31 +52,52 @@ export default class PosterStoreSelectPage extends Component {
 
         return(
           <Container>
-            <Header style={{backgroundColor: '#AA2025'}}>
+            <Header style={{backgroundColor: '#FFF'}}>
               <Body>
-                <View  style={{flex: 1, flexDirection: 'row'}}>
-                <TouchableOpacity onPress={()=> me.back()} style={{marginTop: '0%', padding: '4%'}} >
-                    <Image style={{ width: 20, height: 20}} source={require('./images/back.png')}></Image>
-                </TouchableOpacity>
-                <Title style={{ marginTop: '3%' }}>Pilih toko</Title>
+                <View  style={Style.headerHorizontalLayout}>
+                    <TouchableOpacity onPress={()=> me.back()} >
+                        <Image style={Style.headerImage} source={require('./images/back-dark.png')} resizeMode='contain'></Image>
+                    </TouchableOpacity>
+                    <View style={{width: 10}}></View>
+                    <Title style={Style.headerTitle}>Pilih kategori foto</Title>
                 </View>
               </Body>
             </Header>
 
             <Content padder>
                 <View style={{flex: 1}}>
-
-
                     <ScrollView>
-                        <Text style={{ fontWeight: 'bold' }}>Pilih kategori</Text>
-                        
                         <List>
 
-                            <ListItem key={1} onPress={()=> me.selectCategory({value: 'poster', label: 'Poster'})}>
-                                <Text style={{ marginLeft: '5%', fontWeight: 'normal' }}>Foto Poster</Text>
+                            <ListItem key={1}>
+                                <TouchableOpacity style={{width: '100%'}} onPress={()=> me.selectCategory({value: 'poster', label: 'Poster'})}>
+                                    <Text style={{ marginLeft: '5%', fontWeight: 'normal', alignSelf: 'flex-start' }}>Foto Poster</Text>
+                                </TouchableOpacity>
                             </ListItem>
-                            <ListItem key={2} onPress={()=> me.selectCategory({value: 'storefront', label: 'Store Front'})}>
-                                <Text style={{ marginLeft: '5%', fontWeight: 'normal' }}>Foto Tampak Depan</Text>
+                            <ListItem key={2} >
+                                <TouchableOpacity style={{width: '100%'}} onPress={()=> me.selectCategory({value: 'storefront', label: 'Store Front'})}>
+                                    <Text style={{ marginLeft: '5%', fontWeight: 'normal', alignSelf: 'flex-start' }}>Foto Tampak Depan</Text>
+                                </TouchableOpacity>
+                            </ListItem>
+                            <ListItem key={3} >
+                                <TouchableOpacity style={{width: '100%'}} onPress={()=> me.selectCategory({value: 'poster-before-after', label: 'Foto Poster Sebelum/Sesudah'})}>
+                                    <Text style={{ marginLeft: '5%', fontWeight: 'normal', alignSelf: 'flex-start' }}>Foto Poster Sebelum/Sesudah</Text>
+                                </TouchableOpacity>
+                            </ListItem>
+                            <ListItem key={4} >
+                                <TouchableOpacity style={{width: '100%'}} onPress={()=> me.selectCategory({value: 'storefront-before-after', label: 'Foto Tampak Depan Sebelum/Sesudah'})}>
+                                    <Text style={{ marginLeft: '5%', fontWeight: 'normal', alignSelf: 'flex-start' }}>Foto Tampak Depan Sebelum/Sesudah</Text>
+                                </TouchableOpacity>
+                            </ListItem>
+                            <ListItem key={5} >
+                                <TouchableOpacity style={{width: '100%'}} onPress={()=> me.selectCategory({value: 'etalase', label: 'Foto Etalase'})}>
+                                    <Text style={{ marginLeft: '5%', fontWeight: 'normal', alignSelf: 'flex-start' }}>Foto Etalase</Text>
+                                </TouchableOpacity>
+                            </ListItem>
+                            <ListItem key={6} >
+                                <TouchableOpacity style={{width: '100%'}} onPress={()=> me.selectCategory({value: 'total-sales', label: 'Foto Etalase'})}>
+                                    <Text style={{ marginLeft: '5%', fontWeight: 'normal', alignSelf: 'flex-start' }}>Total Penjualan</Text>
+                                </TouchableOpacity>
                             </ListItem>
   
                         </List>
