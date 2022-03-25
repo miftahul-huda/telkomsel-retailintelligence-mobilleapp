@@ -210,7 +210,7 @@ export default class ImageHomeEtalasePage extends SharedPage {
     async loadRemoteEtalaseItems(me)
     {
         let id = this.state.file.id;
-        let url = GlobalSession.Config.API_HOST + "/storefrontitem/file/" + id;
+        let url = GlobalSession.Config.API_HOST + "/etalaseitem/file/" + id;
         console.log(url)
         HttpClient.get(url, function(response){
             
@@ -351,6 +351,8 @@ export default class ImageHomeEtalasePage extends SharedPage {
         console.log(data);
 
         let authorizationHeader = { 'Authorization': 'Bearer ' +  GlobalSession.Config.API_HOST_ETALASE_DOMINANT_OPERATOR_KEY}
+        console.log("Authorization key : ")
+        console.log(GlobalSession.Config.API_HOST_ETALASE_DOMINANT_OPERATOR_KEY)
 
         HttpClient.post(url, data, function(res){
 
@@ -511,11 +513,20 @@ export default class ImageHomeEtalasePage extends SharedPage {
     {
         var me = this;
         let opacity = 1;
+        let botHeight = 200;
+
+        
+
         if(this.state.showIndicator)
             opacity = 0.3;
 
         if(me.state.file != null)
         {
+            
+            if(me.state.file.imageStatus == "uploaded")
+                botHeight = 1;
+
+            
             return(
                 <Container>
                 <Header style={{backgroundColor: '#FFF'}}>
@@ -632,7 +643,7 @@ export default class ImageHomeEtalasePage extends SharedPage {
                     {
                         //this.getFooter(1)
                     }
-                <Footer style={{height: 200, backgroundColor:'#fff', borderColor: '#eee', borderWidth: 2}}>
+                <Footer style={{height: botHeight, backgroundColor:'#fff', borderColor: '#eee', borderWidth: 2}}>
                 {(this.state.showProgress) ? <ActivityIndicator size="large" color="#FF0000"></ActivityIndicator>
                         :
                         <View style={{backgroundColor: '#fff', height: 300, padding: '5%'}}>
@@ -666,8 +677,9 @@ export default class ImageHomeEtalasePage extends SharedPage {
                                                     <Text style={Style.textDark}>Simpan sebagai draft</Text>
                                                 </View>
                                             </Button>
-                                        </View> : null }
-                            </View>
+                                        </View> : null 
+                        }
+                        </View>
                 }
                 </Footer>
                 </Container>

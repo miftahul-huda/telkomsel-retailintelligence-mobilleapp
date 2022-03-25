@@ -319,6 +319,7 @@ export default class HomePage extends SharedPage {
 
     loadStoreFrontBeforeAfterFiles()
     {
+        console.log("loadStoreFrontBeforeAfterFiles");
         let me = this;
         let url = GlobalSession.Config.API_HOST + "/report/storefront-before-after/byuploader/" + GlobalSession.currentUser.email + "/" + this.state.offset + "/" + this.state.limit;
 
@@ -356,6 +357,7 @@ export default class HomePage extends SharedPage {
 
     loadTotalSalesFiles()
     {
+        console.log("loadTotalSalesFiles()")
         let me = this;
         let url = GlobalSession.Config.API_HOST + "/report/totalsales/byuploader/" + GlobalSession.currentUser.email + "/" + this.state.offset + "/" + this.state.limit;
 
@@ -368,6 +370,9 @@ export default class HomePage extends SharedPage {
         me.setState({
             showLoading: true
         })
+
+        console.log(url)
+        console.log({ outlet: "*", date: dt  })
         HttpClient.post(url, { outlet: "*", date: dt  }, function(response){
 
             let files = response.payload;
@@ -689,6 +694,14 @@ export default class HomePage extends SharedPage {
         {
             Actions.beforeAfterStoreFrontHomePage( {beforeAfterID: file.beforeAfterID} );
         }
+        else if(file.imageCategory == "etalase")
+        {
+            Actions.imageHomeEtalasePage( {file: file} );
+        }
+        else if(file.imageCategory == "total-sales")
+        {
+            Actions.imageHomeTotalSalesPage( {file: file} );
+        }
             
 
         //Actions.viewImagePage({ editMode:true, file: file, onSaveCropImage: Util.onSaveCropImage.bind(this), onSaveRotateImage: this.onSaveRotateImage.bind(this) })
@@ -712,6 +725,8 @@ export default class HomePage extends SharedPage {
             this.loadStoreFrontFiles();
             this.loadPosterBeforeAfterFiles();
             this.loadStoreFrontBeforeAfterFiles();
+            this.loadTotalSalesFiles();
+            this.loadEtalaseFiles();
             this.state.status = "uploaded"
             //this.state.textStatus = "Terunggah";
         }

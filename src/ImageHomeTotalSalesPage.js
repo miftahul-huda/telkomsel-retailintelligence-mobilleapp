@@ -71,6 +71,31 @@ export default class ImageHomeTotalSalesPage extends SharedPage {
 
     async loadTotalSales()
     {
+        if(this.state.file.isuploaded == 1)
+            return this.loadRemoteTotalSales();
+        else
+            return this.loadLocalTotalSales();
+    }
+
+    async loadRemoteTotalSales()
+    {        
+        let id = this.state.file.id;
+        let url = GlobalSession.Config.API_HOST + "/totalsales/file/" + id;
+        console.log(url)
+        HttpClient.get(url, function(response){
+            
+            console.log(response);
+            let packageItems = response.payload;
+
+            me.setState({
+                etalaseItems: packageItems
+            })
+        })
+
+    }
+
+    async loadLocalTotalSales()
+    {
         let promise = new Promise(async(resolve, reject)=>{
             let totalSales = await TotalSales.findOne({ where: { upload_file_id : this.state.file.id } })
             console.log("loadTotalSales")
@@ -369,11 +394,17 @@ export default class ImageHomeTotalSalesPage extends SharedPage {
     {
         var me = this;
         let opacity = 1;
+        let botHeight = 200;
+
         if(this.state.showIndicator)
             opacity = 0.3;
 
         if(me.state.file != null)
         {
+
+            if(me.state.file.imageStatus == "uploaded")
+                botHeight = 1;
+
             return(
                 <Container>
                 <Header style={{backgroundColor: '#FFF'}}>
@@ -464,7 +495,7 @@ export default class ImageHomeTotalSalesPage extends SharedPage {
                     {
                         //this.getFooter(1)
                     }
-                <Footer style={{height: 200, backgroundColor:'#fff', borderColor: '#eee', borderWidth: 2}}>
+                <Footer style={{height: botHeight, backgroundColor:'#fff', borderColor: '#eee', borderWidth: 2}}>
                 {(this.state.showProgress) ? <ActivityIndicator size="large" color="#FF0000"></ActivityIndicator>
                         :
                         <View style={{backgroundColor: '#fff', height: 300, padding: '5%'}}>

@@ -502,11 +502,16 @@ export default class ImageHomeStoreFrontPage extends SharedPage {
     {
         var me = this;
         let opacity = 1;
+        let botHeight = 200;
+
         if(this.state.showIndicator)
             opacity = 0.3;
 
         if(me.state.file != null)
         {
+            if(me.state.file.imageStatus == "uploaded")
+                botHeight = 1;
+
             return(
                 <Container>
                 <Header style={{backgroundColor: '#FFF'}}>
@@ -623,7 +628,7 @@ export default class ImageHomeStoreFrontPage extends SharedPage {
                     {
                         //this.getFooter(1)
                     }
-                <Footer style={{height: 200, backgroundColor:'#fff', borderColor: '#eee', borderWidth: 2}}>
+                <Footer style={{height: botHeight, backgroundColor:'#fff', borderColor: '#eee', borderWidth: 2}}>
                 {(this.state.showProgress) ? <ActivityIndicator size="large" color="#FF0000"></ActivityIndicator>
                         :
                         <View style={{backgroundColor: '#fff', height: 300, padding: '5%'}}>

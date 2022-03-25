@@ -193,7 +193,7 @@ export default class SelectStorePage extends Component {
                         <View style={{width: 10}}></View>
                         <Title style={Style.headerTitle}>Pilih Outlet</Title>
                         <View style={{width: '45%'}}></View>
-                        <View style={{width: '10%'}}>
+                        <View style={{width: '10%', borderWidth: 0}}>
                             <TouchableOpacity onPress={this.openSearch.bind(this)}>
                                 <Image source={require('./images/search-dark.png')} style={{width: '60%'}} resizeMode='contain'></Image>
                             </TouchableOpacity>
