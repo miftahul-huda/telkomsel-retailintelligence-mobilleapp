@@ -7,6 +7,7 @@ import PushNotification from 'react-native-push-notification'
 import BackgroundTimer from 'react-native-background-timer';
 import Uploader from './src/util/Uploader.js';
 import Util from './src/util/Util.js';
+import GlobalSession from './src/GlobalSession.js'
 
 export default class RnrfExample extends Component {
   render() {

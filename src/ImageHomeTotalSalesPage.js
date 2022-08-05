@@ -5,7 +5,7 @@ import { Container, Content, Text, Card, Header, Footer, Body, Button, Title,
   Left,
   Item, CardItem, Icon, View } from 'native-base';
 
-import { Image, ImageBackground, ScrollView, ActivityIndicator, ActionSheetIOS} from 'react-native';
+import { Image, ImageBackground, ScrollView, ActivityIndicator, ActionSheetIOS, Alert} from 'react-native';
 import { Actions } from 'react-native-router-flux';
 
 import UploadedFile from './model/UploadedFile';
@@ -23,6 +23,7 @@ import Uploader from './util/Uploader';
 import Sequelize from "rn-sequelize";
 import { TouchableOpacity } from 'react-native-gesture-handler';
 const Op = Sequelize.Op;
+import * as RNFS from 'react-native-fs';
 
 
 
@@ -37,7 +38,7 @@ export default class ImageHomeTotalSalesPage extends SharedPage {
             showIndicator: false,
             operators: [],
             selectedOperator: null,
-            totalSales: {},
+            totalSales: [],
         }
     }
 
@@ -46,9 +47,6 @@ export default class ImageHomeTotalSalesPage extends SharedPage {
         var me = this;
 
         let filename = this.props.file.filename;
-
-        filename = filename.split("/");
-        filename = filename[filename.length - 1];
         this.state.shortFilename = filename;
 
         this.setState({
@@ -59,8 +57,6 @@ export default class ImageHomeTotalSalesPage extends SharedPage {
             me.loadTotalSales().then((totalSales)=>{
                 console.log("componentDidMount")
                 console.log(totalSales)
-                if(totalSales == null)
-                    totalSales = {}
                 me.setState({
                     totalSales: totalSales
                 })
@@ -78,17 +74,18 @@ export default class ImageHomeTotalSalesPage extends SharedPage {
     }
 
     async loadRemoteTotalSales()
-    {        
+    {       
+        let me = this;
         let id = this.state.file.id;
         let url = GlobalSession.Config.API_HOST + "/totalsales/file/" + id;
         console.log(url)
         HttpClient.get(url, function(response){
             
             console.log(response);
-            let packageItems = response.payload;
+            let totalSales = response.payload;
 
             me.setState({
-                etalaseItems: packageItems
+                totalSales: totalSales
             })
         })
 
@@ -97,7 +94,7 @@ export default class ImageHomeTotalSalesPage extends SharedPage {
     async loadLocalTotalSales()
     {
         let promise = new Promise(async(resolve, reject)=>{
-            let totalSales = await TotalSales.findOne({ where: { upload_file_id : this.state.file.id } })
+            let totalSales = await TotalSales.findAll({ where: { upload_file_id : this.state.file.id } })
             console.log("loadTotalSales")
             console.log(totalSales)
             resolve(totalSales);
@@ -179,17 +176,25 @@ export default class ImageHomeTotalSalesPage extends SharedPage {
     onSaveTotalSales(totalSales)
     {
         var me = this;
-        console.log("totalSales")
-        console.log(totalSales)
 
-        this.setState({
-            totalSales: totalSales
+        me.loadTotalSales().then((totalSales)=>{
+            console.log("onSaveTotalSales")
+            console.log(totalSales)
+            me.setState({
+                totalSales: totalSales
+            })
         })
+
     }
 
     addInfo()
     {
-        Actions.editTotalSalesPage({ file: this.state.file, totalSales: this.state.totalSales, onAfterSaved: this.onSaveTotalSales.bind(this) })
+        Actions.editTotalSalesPage({ file: this.state.file, totalSales: {}, onAfterSaved: this.onSaveTotalSales.bind(this) })
+    }
+
+    editTotalSales(item)
+    {
+        Actions.editTotalSalesPage({ file: this.state.file, totalSales: item, onAfterSaved: this.onSaveTotalSales.bind(this) })
     }
 
 
@@ -238,14 +243,8 @@ export default class ImageHomeTotalSalesPage extends SharedPage {
     validate()
     {
         let result = { success: true }
-        if(this.state.totalSales.kartuPerdana == null || this.state.totalSales.kartuPerdana.length == 0)
-            result = { success: false, message: 'Kartu perdana tidak boleh kosong' }
-        if(this.state.totalSales.voucherFisik == null || this.state.totalSales.voucherFisik.length == 0)
-            result = { success: false, message: 'Voucher fisik tidak boleh kosong' }
-        if(this.state.totalSales.isiUlang == null || this.state.totalSales.isiUlang.length == 0)
-            result = { success: false, message: 'Isi ulang tidak boleh kosong' }
-        if(this.state.totalSales.paketPalingBanyakDibeli == null || this.state.totalSales.paketPalingBanyakDibeli.length == 0)
-            result = { success: false, message: 'Paket paling banyak dibeli tidak boleh kosong' }
+        if(this.state.totalSales == null || this.state.totalSales.length == 0)
+            result = { success: false, message: 'Detail sales shares per operator harus diisi' }
 
         return result;
     }
@@ -291,7 +290,8 @@ export default class ImageHomeTotalSalesPage extends SharedPage {
                         else
                         {
                             alert("Unggah selesai", "Unggah foto telah berhasil dilakukan")
-                            Actions.reset("homePage")
+                            Actions.reset("uploadPage", {imageCategory: "total-sales", imageStatus: "draft"})
+                            //Actions.reset("homePage")
                         }
                         me.setState({
                             showProgress: false
@@ -320,47 +320,88 @@ export default class ImageHomeTotalSalesPage extends SharedPage {
         }
     }
 
+    getTotalPenjualanPerdana(item)
+    {
+        let total = 0;
+        console.log(item)
+        switch(item.operator.toLowerCase())
+        {
+            case "telkomsel":
+                total = item.totalPenjualanKartuPerdanaTelkomsel;
+            break;
+            case "indosat":
+                total = item.totalPenjualanKartuPerdanaIndosat;
+            break;
+            case "smartfren":
+                total = item.totalPenjualanKartuPerdanaSmartfren;
+            break;
+            case "xl":
+                total = item.totalPenjualanKartuPerdanaXL;
+            break;
+            case "axis":
+                total = item.totalPenjualanKartuPerdanaAxis;
+            break;
+            case "tri":
+                total = item.totalPenjualanKartuPerdanaTri;
+            break;
+
+        }
+
+        return total;
+    }
+
+    getTotalPenjualanVoucherFisik(item)
+    {
+        let total = 0;
+        switch(item.operator.toLowerCase())
+        {
+            case "telkomsel":
+                total = item.totalPenjualanVoucherFisikTelkomsel;
+            break;
+            case "indosat":
+                total = item.totalPenjualanVoucherFisikIndosat;
+            break;
+            case "smartfren":
+                total = item.totalPenjualanVoucherFisikSmartfren;
+            break;
+            case "xl":
+                total = item.totalPenjualanVoucherFisikXL;
+            break;
+            case "axis":
+                total = item.totalPenjualanVoucherFisikAxis;
+            break;
+            case "tri":
+                total = item.totalPenjualanVoucherFisikTri;
+            break;
+
+        }
+
+        return total;
+    }
 
     getTotalSalesInfoDisplay()
     {
+        console.log("getTotalSalesInfoDisplay()")
+        console.log(this.state.totalSales)
+
         return(<View>
-                <View style={Style.horizontalLayout}>
-                    <View style={{width: '60%', height:25}}>
-                        <Text style={Style.content}>Kartu Perdana</Text> 
-                    </View>
-                    <View style={{width: '10%'}}>
-                        <Text style={Style.content}>:</Text> 
-                    </View>
-                    <Text style={Style.content}>{this.state.totalSales.kartuPerdana}</Text> 
-                </View>
-                <View style={Style.horizontalLayout}>
-                    <View style={{width: '60%', height:25}}>
-                        <Text style={Style.content}>Voucher Fisik</Text> 
-                    </View>
-                    <View style={{width: '10%'}}>
-                        <Text style={Style.content}>:</Text> 
-                    </View>
-                    <Text style={Style.content}>{this.state.totalSales.voucherFisik}</Text> 
-                </View>
-                <View style={Style.horizontalLayout}>
-                    <View style={{width: '60%', height:25}}>
-                        <Text style={Style.content}>Isi Ulang</Text> 
-                    </View>
-                    <View style={{width: '10%'}}>
-                        <Text style={Style.content}>:</Text> 
-                    </View>
-                    <Text style={Style.content}>{this.state.totalSales.isiUlang}</Text> 
-                </View>
-                <View style={Style.horizontalLayout}>
-                    <View style={{width: '60%', height:25}}>
-                        <Text style={Style.content}>Paket paling banyak dibeli</Text> 
-                    </View>
-                    <View style={{width: '10%'}}>
-                        <Text style={Style.content}>:</Text> 
-                    </View>
-                    <Text style={Style.content}>{this.state.totalSales.paketPalingBanyakDibeli}</Text> 
-                </View>
-                
+            {
+                (this.state.totalSales.map((item)=>{
+                    return (<ListItem key={item.id}>
+                        <TouchableOpacity onPress={this.editTotalSales.bind(this, item)} style={{width: '100%', display: 'flex', flexDirection: 'row'}}>
+                            <View style={{width: '30%', height:25}}>
+                                <Text style={Style.content}>{item.operator.toUpperCase()}</Text> 
+                            </View>
+                            <View style={{width: '30%'}}>
+                                <Text style={Style.content}>Kartu Perdana : {item.totalPenjualanPerdana}</Text> 
+                            </View>
+                            <View style={{width: '40%'}}>
+                                <Text style={Style.content}>Voucher Fisik : {item.totalPenjualanVoucherFisik}</Text> 
+                            </View>
+                        </TouchableOpacity>
+                    </ListItem>)
+                } ))
+            }   
         </View>)
     }
 
@@ -389,6 +430,36 @@ export default class ImageHomeTotalSalesPage extends SharedPage {
         });
     }
 
+    async delete()
+    {
+        var me = this;
+        Alert.alert("Konfirmasi hapus", "Data akan dihapus, apakah anda yakin?", [
+            {
+                text:  "Ya",
+                onPress: async ()=>{
+
+                    await TotalSales.destroy({ where: { upload_file_id: me.state.file.id }  })
+                    await UploadedFile.destroy({ where: { id: me.state.file.id } })
+                    try { await RNFS.unlink(me.state.file.filename) } catch (e) {}
+                    try { await RNFS.unlink(me.state.file.compressed_filename) } catch (e) {}
+
+                    alert("Data telah dihapus")
+                    Actions.reset("uploadPage", { imageCategory: "total-sales", imageStatus: "draft" })
+
+                }
+            },
+            {
+                text: "Tidak"
+            }
+        ])
+    }
+
+
+    viewUploadHistory(imageCategory)
+    {
+        Actions.uploadHistoryPage({  imageCategory: imageCategory })
+    }
+
 
     render()
     {
@@ -401,9 +472,9 @@ export default class ImageHomeTotalSalesPage extends SharedPage {
 
         if(me.state.file != null)
         {
-
+            console.log(me.state.file.imageStatus)
             if(me.state.file.imageStatus == "uploaded")
-                botHeight = 1;
+                botHeight = 100;
 
             return(
                 <Container>
@@ -413,7 +484,7 @@ export default class ImageHomeTotalSalesPage extends SharedPage {
                                 <Image style={Style.headerImage} resizeMode='contain' source={require('./images/back-dark.png')}></Image>
                             </TouchableOpacity>
                             <View style={{width: 10}}></View>
-                            <Title style={Style.headerTitle}>Lengkapi informasi gambar</Title>
+                            <Title style={Style.headerTitle}>Lengkapi informasi</Title>
                     </View>
                 </Header>
                 <Content style={{backgroundColor: '#eee', opacity: opacity}} >
@@ -429,10 +500,9 @@ export default class ImageHomeTotalSalesPage extends SharedPage {
                             {
                                 (this.state.showIndicator) ? <ActivityIndicator size="large" color="#ff0000"></ActivityIndicator> : null
                             }
-                        
                     </View>
                     <View style={{height: 15}}></View>
-                    <View style={{width: '100%', height: 100, backgroundColor: '#fff', padding: 20}}>
+                    <View style={{width: '100%', height: 100, backgroundColor: '#fff', padding: 20, display: 'none'}}>
                         <View style={Style.horizontalLayout}>
                             <View style={{width: '95%', flex:1, flexDirection: 'row'}}>
                                 <View style={{marginTop: -10}}>
@@ -448,7 +518,7 @@ export default class ImageHomeTotalSalesPage extends SharedPage {
 
                             <TouchableOpacity onPress={() => this.viewImage()}>
                                 <Text style={Style.contentRedBold}>
-                                    Edit
+                                    Lihat
                                 </Text>
                             </TouchableOpacity>
                         </View>
@@ -458,14 +528,14 @@ export default class ImageHomeTotalSalesPage extends SharedPage {
                     <View style={{width: '100%', height: 'auto', backgroundColor: '#fff', padding: 20}}>
                         
                         <View style={Style.horizontalLayout}>
-                            <View style={{width: '95%'}}>
-                                <Text style={Style.contentTitle}>Informasi Umum</Text>
-                                <LabelInput text="" subtext="Informasi umum keseluruhan."></LabelInput>
+                            <View style={{width: '75%'}}>
+                                <Text style={Style.contentTitle}>Informasi Total Penjualan</Text>
+                                <LabelInput text="" subtext="Tekan tambah/ubah untuk menambahkan item, tekan item untuk merubahnya."></LabelInput>
 
                             </View>
                             <View>
                                 <TouchableOpacity onPress={this.addInfo.bind(this)}>
-                                    <Text style={Style.contentRedBold}>Edit</Text>
+                                    <Text style={Style.contentRedBold}>Tambah/Ubah</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -473,7 +543,7 @@ export default class ImageHomeTotalSalesPage extends SharedPage {
                         <View style={{height: 10}}></View>
                         <View style={Style.horizontalLayout}>
                         {
-                            (this.state.totalSales.kartuPerdana != null) ?
+                            (this.state.totalSales != null && this.state.totalSales.length > 0) ?
                                 this.getTotalSalesInfoDisplay()
                                 :
                                 <Text style={Style.contentLight}>Belum ada informasi konten</Text>
@@ -516,6 +586,12 @@ export default class ImageHomeTotalSalesPage extends SharedPage {
                                             <Text style={Style.textDark}>Simpan sebagai draft</Text>
                                         </View>
                                     </Button>
+                                    <View style={{height: 5}}></View>
+                                    <Button style={Style.button} onPress={()=>this.delete()}>
+                                        <View style={{ alignItems: 'center', width: '100%' }}>
+                                            <Text style={Style.textDark}>Hapus</Text>
+                                        </View>
+                                    </Button>
                                     
                                 
                                 </> :  (this.state.file.imageStatus == "processed") ? 
@@ -525,7 +601,13 @@ export default class ImageHomeTotalSalesPage extends SharedPage {
                                                     <Text style={Style.textDark}>Simpan sebagai draft</Text>
                                                 </View>
                                             </Button>
-                                        </View> : null }
+                                        </View> : <View>
+                                            <Button style={Style.button} onPress={()=>this.viewUploadHistory("total-sales")}>
+                                                <View style={{ alignItems: 'center', width: '100%' }}>
+                                                    <Text style={Style.textDark}>Kembali ke daftar unggah</Text>
+                                                </View>
+                                            </Button>
+                                        </View>  }
                             </View>
                 }
                 </Footer>

@@ -5,7 +5,7 @@ import { Container, Content, Text, Card, Header, Footer, Body, Button, Title,
   Left,
   Item, CardItem, Icon, View } from 'native-base';
 
-import { Image, ImageBackground, ScrollView, ActivityIndicator, ActionSheetIOS} from 'react-native';
+import { Image, ImageBackground, ScrollView, ActivityIndicator, ActionSheetIOS, Alert} from 'react-native';
 import { Actions } from 'react-native-router-flux';
 
 import UploadedFile from './model/UploadedFile';
@@ -22,7 +22,11 @@ import Uploader from './util/Uploader';
 import Sequelize from "rn-sequelize";
 import { TouchableOpacity } from 'react-native-gesture-handler';
 import EtalaseItem from './model/EtalaseItem';
+import { flushSync } from 'react-dom';
+import { RNFetchBlobStat } from 'rn-fetch-blob';
 const Op = Sequelize.Op;
+import * as RNFS from 'react-native-fs';
+
 
 
 
@@ -37,6 +41,7 @@ export default class ImageHomeEtalasePage extends SharedPage {
             file: props.file,
             etalaseItems: [],
             showIndicator: false,
+            showButtons: false,
             operators: [],
             selectedOperator: null
         }
@@ -180,15 +185,15 @@ export default class ImageHomeEtalasePage extends SharedPage {
         Actions.editEtalaseItemPage({ mode: "add", file: this.state.file, item: item, onAfterSaved: this.onSaveEtalaseItem.bind(this), operator: this.state.selectedOperator });
     }
 
-    async loadEtalaseItems(me)
+    async loadEtalaseItems(me, callback)
     {
         if(this.state.file.isuploaded)
             this.loadRemoteEtalaseItems(this);
         else
-            this.loadLocalEtalaseItems(this);
+            this.loadLocalEtalaseItems(this, callback);
     }
 
-    async loadLocalEtalaseItems(me)
+    async loadLocalEtalaseItems(me, callback)
     {
         try
         {
@@ -198,6 +203,9 @@ export default class ImageHomeEtalasePage extends SharedPage {
             this.setState({
                 etalaseItems: etalaseItems
             })
+
+            if(callback != null)
+                callback()
             return true;
         }
         catch(err)
@@ -303,22 +311,41 @@ export default class ImageHomeEtalasePage extends SharedPage {
 
     displayEtalaseItems()
     {
+        /*
         return(<View>
             {
                 this.state.etalaseItems.map((etalaseItem)=>{
                     
-                    return(<ListItem key={etalaseItem.id} style={{ height: 60, flex:1,  flexDirection: 'row'}}>
+                    return(<ListItem key={etalaseItem.id} style={{ height: 80, flex:1,  flexDirection: 'row'}}>
                         <TouchableOpacity onPress={this.editEtalaseItem.bind(this, etalaseItem)}>
-                            <Text style={Style.content}>Operator : {etalaseItem.operatorText}, Persentase : {etalaseItem.percentage}%</Text>
+                            <Text style={Style.content}>{etalaseItem.operatorText.toUpperCase()}</Text> 
+                            <Text style={Style.content}>Availability: {etalaseItem.percentage} %</Text>
+                            <Text style={Style.content}>Visibility: {etalaseItem.visibility_percentage} %</Text>
                         </TouchableOpacity>
                     </ListItem>)
                 })
             }
         </View>)
+        */
+
+        
+        return(<View>
+            <View>
+                <Image source={require('./images/checked-green.png')} style={{width: 60, height: 60, resizeMode: 'stretch', alignSelf: 'center'}}></Image>
+            </View>
+            <View style={{height: 20}}>
+
+            </View>
+            <View>
+                <Text>Informasi AV-Index Berhasil diambil. Data sudah bisa diunggah.</Text>
+            </View>
+        </View>)
+        
     }
 
     getEtalaseInfoDisplay()
     {
+        
         return(<View>
                 <View style={Style.horizontalLayout}>
                     <View style={{width: '60%', height:25}}>
@@ -331,6 +358,21 @@ export default class ImageHomeEtalasePage extends SharedPage {
                 </View>
                 
         </View>)
+        
+
+        /*
+        return(<View>
+            <View>
+                <Image source={require('./images/checked-green.png')} style={{width: 60, height: 60, resizeMode: 'stretch', alignSelf: 'center'}}></Image>
+            </View>
+            <View style={{height: 20}}>
+
+            </View>
+            <View>
+                <Text>Informasi operator dominan berhasil diambil. Data sudah bisa diunggah.</Text>
+            </View>
+        </View>)
+        */
     }
 
     callOperatorFilter(me, uri,  callback, callbackError){
@@ -390,6 +432,70 @@ export default class ImageHomeEtalasePage extends SharedPage {
         return selOp;
     }
 
+    callVisibilityScoring(me, uri, etalaseItems, callback, callbackError)
+    {
+        var url = GlobalSession.Config.API_HOST_ETALASE_VISIBILITY_SCORE;
+        uri = uri.replace("https://storage.googleapis.com/", 'gs://')
+
+        let fname = uri.split('/').pop()
+        let dest = uri.replace("gs://", "")
+        dest = uri.replace(fname, "");
+        var data = { image_gcs_path: uri, destination_gcs_path: dest }
+
+        console.log("Foto to analyze")
+        console.log(uri)
+
+        console.log("Visibility Filter")
+        console.log(url);
+        console.log(data);
+
+        let authorizationHeader = { 'Authorization': 'Bearer ' +  GlobalSession.Config.API_HOST_ETALASE_VISIBILITY_SCORE_KEY}
+        console.log("Authorization key : ")
+        console.log(GlobalSession.Config.API_HOST_ETALASE_VISIBILITY_SCORE_KEY)
+
+        HttpClient.post(url, data, function(res){
+
+            console.log("RESULT VISIBILITY SCORE")
+            console.log(res.payload)
+
+            if(res.success)
+            {
+
+                let operators = res.payload.operators;
+                operators.map((op)=>{
+                    etalaseItems.map((item)=>{
+                        if(item.operator == op.operator)
+                        {
+                            item.visibility_percentage = op.total_point;
+                            item.visibility_score = op.score;
+                            item.original_visibility_percentage = op.total_point;
+                            item.original_visibility_score = op.score;
+                        }
+                    })
+                })
+
+                if(callback !=null)
+                    callback(etalaseItems);
+            }
+            else
+            {
+                console.log("Retrieve visibility score error")
+                console.log(res.error);
+                if(callbackError != null)
+                    callbackError(me, res.error);
+            }
+
+
+            
+        }, function(err){
+            console.log("Retrieve operator error 2")
+            console.log(err);
+            if(callbackError != null)
+                callbackError(me, uri);
+            Logging.log(err, "error", "ImageInfoEtalasePage.callOperatorFilter().HttpClient.post() " + uri)
+        }, authorizationHeader);
+    }
+
     autoRetrieveOperator(me, uri, callback, callbackError)
     {
         console.log("autoretrieve operator")
@@ -410,49 +516,62 @@ export default class ImageHomeEtalasePage extends SharedPage {
                 await EtalaseItem.destroy({where: { upload_file_id: me.state.file.id }})
 
                 operators.map(async (operator)=>{
-                    console.log(operator)
+
                     let max =  Util.makeid(10);
                     if(operator.percentage > 0)
                     {
-                        let item = { id:null, operator: operator.operator.toLowerCase(), operatorText: operator.operatorText , percentage: operator.percentage,  tempid: max };
+                        let item = { id:null, operator: operator.operator.toLowerCase(), operatorText: operator.operatorText , percentage: operator.percentage, availability_score: operator.score,  tempid: max };
                         item.upload_file_id = me.state.file.id;
+                        item.originalOperator = operator.operator.toLowerCase();
+                        item.originalOperatorText  = operator.operatorText;
+                        item.original_availability_percentage = operator.percentage;
+                        item.original_availability_score = operator.score;
                         etalaseItems.push(item);
-                        await EtalaseItem.create(item);
+                        //await EtalaseItem.create(item);
                     }
                 })
-                await UploadedFile.update({ operatorDominant: largestOp.operator.toLowerCase(), operatorDominantText: largestOp.operatorText },
+                await UploadedFile.update({ operatorDominant: largestOp.operator.toLowerCase(), operatorDominantText: largestOp.operatorText, originalOperatorDominant: largestOp.operator.toLowerCase(), originalOperatorDominantText: largestOp.operatorText },
                 {where:{id: me.state.file.id } })
 
-                me.loadFile(function(){
-                    me.loadEtalaseItems(me);
+                me.callVisibilityScoring(me, uri, etalaseItems, async function(newEtalaseItems){
+
+                    let idx = 0;
+                    newEtalaseItems.map((item)=>{
+                        if(item.visibility_score == null)
+                        {
+                            newEtalaseItems.splice(idx, 1)
+                        }
+                        idx++;
+                    })
+
+                    console.log("NEW ETALASE ITEMS")
+                    console.log(newEtalaseItems)
+
+                    await EtalaseItem.bulkCreate(newEtalaseItems);
+                    me.loadFile(function(){
+                        me.loadEtalaseItems(me);
+                        me.state.effortCounter = 0;
+                        if(callback != null)
+                            callback();
+                    })
                 })
-                
 
             }
 
             me.state.effortCounter = 0;
-            if(callback != null)
-                callback();
+            //if(callback != null)
+            //    callback();
 
         }, function(me, uri){
-            if(me.state.effortCounter < 5)
-            {
-                me.state.effortCounter++;
-                console.log("Try again autoretrieve operator... : " + me.state.effortCounter)
-                me.autoRetrieveOperator(me, uri, callback, callbackError);
-            }
-            else
-            {
-                if(callbackError != null)
-                    callbackError();
-                me.state.effortCounter = 0;
-            }
+            //alert("Foto tidak dapat dibaca. Mohon ambil foto yang valid.")
+            if(callbackError != null)
+                callbackError();
         })
     }
 
     uploadToGcs(orientation, callback, callbackError)
     {
-        var url = GlobalSession.Config.API_HOST_UPLOAD + "/upload/gcs/telkomsel-retail-intelligence/retail-intelligence-bucket/temporary";
+        var url = GlobalSession.Config.API_HOST_UPLOAD + "/upload/gcs/" + GlobalSession.Config.TEMPORARY_UPLOAD_PATH;
         console.log(url);
         HttpClient.upload(url, this.state.file.filename, function(res){
             console.log("done upload image");
@@ -495,7 +614,7 @@ export default class ImageHomeEtalasePage extends SharedPage {
                             showIndicator: false
                         })
                         //let sError = JSON.stringify(err);
-                        alert("Extrak operator gagal. Mohon isi manual.");
+                        alert("Extrak operator gagal. Sepertinya foto sulit dibaca. Mohon ambil ulang foto yang lebih baik. ");
                     })
 
             }, 100);
@@ -509,11 +628,45 @@ export default class ImageHomeEtalasePage extends SharedPage {
         });
     }
 
+    async delete()
+    {
+        var me = this;
+        Alert.alert("Konfirmasi hapus", "Data akan dihapus, apakah anda yakin?", [
+            {
+                text:  "Ya",
+                onPress: async ()=>{
+
+                    await EtalaseItem.destroy({ where: { upload_file_id: me.state.file.id }  })
+                    await UploadedFile.destroy({ where: { id: me.state.file.id } })
+                    try { await RNFS.unlink(me.state.file.filename) } catch (e) {}
+                    try { await RNFS.unlink(me.state.file.compressed_filename) } catch (e) {}
+                    alert("Data telah dihapus")
+                    Actions.reset("uploadPage", { imageCategory: "etalase", imageStatus: "draft" })
+
+                }
+            },
+            {
+                text: "Tidak"
+            }
+        ])
+    }
+
+
+    viewUploadHistory(imageCategory)
+    {
+        Actions.uploadHistoryPage({  imageCategory: imageCategory })
+    }
+
+    isCloseToBottom({ layoutMeasurement, contentOffset, contentSize }) 
+    {
+        return layoutMeasurement.height + contentOffset.y >= contentSize.height - 1;
+    }
+
     render()
     {
         var me = this;
         let opacity = 1;
-        let botHeight = 200;
+        let botHeight = 240;
 
         
 
@@ -522,9 +675,11 @@ export default class ImageHomeEtalasePage extends SharedPage {
 
         if(me.state.file != null)
         {
+            console.log(me.state.file.imageStatus)
+            console.log(me.state.showProgress)
             
             if(me.state.file.imageStatus == "uploaded")
-                botHeight = 1;
+                botHeight = 100;
 
             
             return(
@@ -538,7 +693,22 @@ export default class ImageHomeEtalasePage extends SharedPage {
                             <Title style={Style.headerTitle}>Lengkapi gambar etalase</Title>
                     </View>
                 </Header>
-                <Content style={{backgroundColor: '#eee', opacity: opacity}} >
+                <Content style={{backgroundColor: '#eee', opacity: opacity}}  onScroll={({ nativeEvent }) => {
+                    if (this.isCloseToBottom(nativeEvent)) {
+                        //console.warn("Reached end of page");
+                        this.setState({
+                            ...this.state,
+                            showButtons: true
+                        })
+                    }
+                    else
+                    {
+                        this.setState({
+                            ...this.state,
+                            showButtons: false
+                        })
+                    }
+                }}>
                     {
                         this.getDialog()
                     }
@@ -548,10 +718,6 @@ export default class ImageHomeEtalasePage extends SharedPage {
                             <Text style={Style.contentTitle}>Outlet</Text>
                             <View style={{height: 10}}></View>
                             <Text style={Style.content}>{this.props.file.store_name}</Text>
-                            {
-                                (this.state.showIndicator) ? <ActivityIndicator size="large" color="#ff0000"></ActivityIndicator> : null
-                            }
-                        
                     </View>
                     <View style={{height: 15}}></View>
                     <View style={{width: '100%', height: 100, backgroundColor: '#fff', padding: 20}}>
@@ -570,7 +736,7 @@ export default class ImageHomeEtalasePage extends SharedPage {
 
                             <TouchableOpacity onPress={() => this.viewImage()}>
                                 <Text style={Style.contentRedBold}>
-                                    Edit
+                                    Lihat
                                 </Text>
                             </TouchableOpacity>
                         </View>
@@ -581,8 +747,8 @@ export default class ImageHomeEtalasePage extends SharedPage {
                         
                         <View style={Style.horizontalLayout}>
                             <View style={{width: '95%'}}>
-                                <Text style={Style.contentTitle}>Informasi Umum {this.state.imageCategoryText}</Text>
-                                <LabelInput text="" subtext="Informasi umum keseluruhan tampak depan."></LabelInput>
+                                <Text style={Style.contentTitle}>Operator paling dominan</Text>
+                                <LabelInput text="" subtext="Informasi operator paling dominan. Tekan 'Isi Otomatis' untuk mengisinya."></LabelInput>
 
                             </View>
                             <View>
@@ -602,17 +768,20 @@ export default class ImageHomeEtalasePage extends SharedPage {
                         }
                             
                         </View>
+
                     </View>
                     <View style={{height: 15}}></View>
                     <View style={{width: '100%', height: 'auto', backgroundColor: '#fff', padding: 20}}>
-                        
+                        {
+                                (this.state.showIndicator) ? <ActivityIndicator size="large" color="#ff0000"></ActivityIndicator> : null
+                        }
                         <View style={Style.horizontalLayout}>
                             <View style={{width: '85%'}}>
-                                <Text style={Style.contentTitle}>Detail Produk</Text>
-                                <LabelInput text="" subtext="Daftar item-item paket yang ada di etalase. Tekan tambah untuk menambahkan item. Tekan item untuk merubah atau menghapus."></LabelInput>
+                                <Text style={Style.contentTitle}>Daftar operator dan visibility/availability-nya</Text>
+                                <LabelInput text="" subtext="Daftar item-item paket yang ada di etalase. Tekan 'Isi Otomatis' untuk mengisi item"></LabelInput>
                             </View>
                             <View>
-                                <TouchableOpacity onPress={this.addEtalaseItem.bind(this)}>
+                                <TouchableOpacity style={{display: 'none'}} onPress={this.addEtalaseItem.bind(this)}>
                                     <Text style={Style.contentRedBold}>Tambah</Text>
                                 </TouchableOpacity>
                             </View>
@@ -627,6 +796,7 @@ export default class ImageHomeEtalasePage extends SharedPage {
                             }
                             
                         </View>
+
                     </View>
 
                     <View style={{height: 15}}></View>
@@ -643,15 +813,14 @@ export default class ImageHomeEtalasePage extends SharedPage {
                     {
                         //this.getFooter(1)
                     }
+
                 <Footer style={{height: botHeight, backgroundColor:'#fff', borderColor: '#eee', borderWidth: 2}}>
                 {(this.state.showProgress) ? <ActivityIndicator size="large" color="#FF0000"></ActivityIndicator>
                         :
-                        <View style={{backgroundColor: '#fff', height: 300, padding: '5%'}}>
+                        <View style={{backgroundColor: '#fff', height: 600, padding: '5%'}}>
                         {
                             (this.state.file.imageStatus != "processed" && this.state.file.imageStatus != "uploaded") ?
                             <>
-                                
-                                
                                     <Button style={Style.buttonDark} onPress={()=>this.autofill()}>
                                         <View style={{ alignItems: 'center', width: '100%' }}>
                                             <Text style={Style.textWhite}>Isi otomatis</Text>
@@ -669,6 +838,12 @@ export default class ImageHomeEtalasePage extends SharedPage {
                                             <Text style={Style.textDark}>Simpan sebagai draft</Text>
                                         </View>
                                     </Button>
+                                    <View style={{height: 5}}></View>
+                                    <Button style={Style.button} onPress={()=>this.delete()}>
+                                        <View style={{ alignItems: 'center', width: '100%' }}>
+                                            <Text style={Style.textDark}>Hapus</Text>
+                                        </View>
+                                    </Button>
                                 
                                 </> :  (this.state.file.imageStatus == "processed") ? 
                                         <View>
@@ -677,11 +852,19 @@ export default class ImageHomeEtalasePage extends SharedPage {
                                                     <Text style={Style.textDark}>Simpan sebagai draft</Text>
                                                 </View>
                                             </Button>
-                                        </View> : null 
+                                        </View> 
+                                        : 
+                                        <View>
+                                            <Button style={Style.button} onPress={()=>this.viewUploadHistory("etalase")}>
+                                                <View style={{ alignItems: 'center', width: '100%' }}>
+                                                    <Text style={Style.textDark}>Kembali ke daftar unggah</Text>
+                                                </View>
+                                            </Button>
+                                        </View> 
                         }
                         </View>
                 }
-                </Footer>
+                </Footer> 
                 </Container>
             );
         }

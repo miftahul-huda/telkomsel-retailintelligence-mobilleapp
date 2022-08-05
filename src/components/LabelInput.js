@@ -30,6 +30,10 @@ export default class LabelInput extends Component
 
     render()
     {
+        let textStyle = Style.content;
+        if(this.props.bold)
+            textStyle = Style.contentBold;
+
         return(
             <View style={{height: 'auto'}}>
                 
@@ -39,7 +43,7 @@ export default class LabelInput extends Component
                     <View style={{height: 20}}>
                     <View style={{flex:1, flexDirection: 'row'}}>
                         <View>
-                            <Text style={Style.Content}>{this.props.text}
+                            <Text style={textStyle}>{this.props.text}
                             </Text>
                         </View>
                         {(this.props.link != null) ?

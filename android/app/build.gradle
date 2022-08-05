@@ -203,6 +203,7 @@ android {
 }
 
 dependencies {
+    compile project(':react-native-compress-image')
     implementation fileTree(dir: "libs", include: ["*.jar"])
     implementation project(':react-native-fs')
     implementation project(':react-native-webview')

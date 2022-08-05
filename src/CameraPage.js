@@ -13,6 +13,9 @@ import GetLocation from 'react-native-get-location';
 
 import Logging from './util/Logging';
 import GlobalSession from './GlobalSession';
+import CompressImage from 'react-native-compress-image';
+
+import { BackHandler } from 'react-native';
 
 
 const styles = StyleSheet.create({
@@ -35,11 +38,28 @@ export default class CameraPage extends React.Component {
       this.state = {
         loading : false
       }
+
+      this.backHandler = null;
     }
 
     componentDidMount()
     {
 
+    }
+
+    componentWillMount()
+    {
+      this.backHandler = BackHandler.addEventListener('hardwareBackPress', this.hardwareBackPress)
+    }
+
+    componentWillUnmount(){
+      BackHandler.removeEventListener('hardwareBackPress', this.hardwareBackPress)
+    }
+
+    hardwareBackPress()
+    {
+      Actions.pop();
+      Actions.reset("homePage");
     }
 
     makeid(length) {
@@ -59,7 +79,7 @@ export default class CameraPage extends React.Component {
       return dateString;
     }
 
-    assembleUploadFileObject(me, msg, filename)
+    assembleUploadFileObject(me, msg, filename, compressedFilename)
     {
         let uploadedFile = {};
         uploadedFile.pixel_width = msg.ImageWidth;
@@ -75,6 +95,7 @@ export default class CameraPage extends React.Component {
         uploadedFile.fnumber = msg.exif.FNumber;
 
         uploadedFile.filename = filename;
+        uploadedFile.compressed_filename = compressedFilename;
         uploadedFile.isuploaded = 0;
         uploadedFile.picture_taken_date = me.getCurrentDate();
 
@@ -91,7 +112,7 @@ export default class CameraPage extends React.Component {
         return uploadedFile;
     }
 
-    createNewFileInfo(filename){
+    createNewFileInfo(filename, compressedFilename){
 
       let uploadedFile = {};
       let promise  = new Promise((resolve, reject) => {
@@ -107,7 +128,7 @@ export default class CameraPage extends React.Component {
                 console.log("Exit");
                 console.log(msg);
 
-                uploadedFile  = this.assembleUploadFileObject(this, msg, filename);
+                uploadedFile  = this.assembleUploadFileObject(this, msg, filename, compressedFilename);
 
                 uploadedFile.lon = location.longitude;
                 uploadedFile.lat = location.latitude;
@@ -119,7 +140,7 @@ export default class CameraPage extends React.Component {
                 const { code, message } = error;
                 console.log( message);
                 //Logging.log(error, "error", "CameraPage.createNewFileInfo() : GetLocation.getCurrentPosition()")
-                uploadedFile  = this.assembleUploadFileObject(this, msg, filename);
+                uploadedFile  = this.assembleUploadFileObject(this, msg, filename, compressedFilename);
                 resolve(uploadedFile);
             })
 
@@ -139,62 +160,85 @@ export default class CameraPage extends React.Component {
 
   }
 
-    async onSaveImage(res)
-    {
-      var me = this;
-      me.setState({ loading: true  })
+  saveImageContinue(savedFile, compressedFile)
+  {
+    var me = this;
+    me.createNewFileInfo(savedFile, compressedFile).then(function(file){
 
-      let croppedFilename = res.uri.replace("file://", "");
-      croppedFilename = croppedFilename.replace("file:", "");
+      file.imageStatus = "draft";
+      UploadedFile.create(file).then(function(newFile){
+        me.setState({ loading: false  })
+        Alert.alert("File saved");
+        Actions.pop();
+        //Actions.pop();
 
-      console.log('croppedFilename');
-      console.log(croppedFilename);
+        if(me.props.onAfterTakePicture != null)
+          me.props.onAfterTakePicture(newFile);
+      })
+    }).catch(function(err){
+      me.setState({ loading: false  })
+      let sjson = JSON.stringify(err);
+      Logging.log(err, "error", "CameraPage.onSaveImage() : me.createNewFileInfo()")
+      alert(json);
+    });
+  }
 
-      let dt = new Date();
-      let dtfolder = dt.getFullYear() + "" + dt.getMonth() + "" + dt.getDate();
-      let filename = GlobalSession.currentUser.email + "-" + dt.getHours() +  "" + dt.getMinutes() + "" + dt.getSeconds() + "-" + me.makeid(7) + ".jpg";
+  async onSaveImage(res)
+  {
+    var me = this;
+    me.setState({ loading: true  })
 
-      let folder = FILE_STORAGE_PATH + '/retail-intelligence/pics/' + dtfolder;
-      RNFS.mkdir(folder).then(function(){
-        let savedFile = folder + "/" + filename;
-        RNFS.copyFile(croppedFilename, savedFile ).then(function(){
+    let croppedFilename = res.uri.replace("file://", "");
+    croppedFilename = croppedFilename.replace("file:", "");
 
-          me.createNewFileInfo(savedFile).then(function(file){
+    console.log('croppedFilename');
+    console.log(croppedFilename);
 
-            file.imageStatus = "draft";
-            UploadedFile.create(file).then(function(newFile){
-              me.setState({ loading: false  })
-              Alert.alert("File saved");
-              Actions.pop();
-              //Actions.pop();
+    let dt = new Date();
+    let dtfolder = dt.getFullYear() + "" + dt.getMonth() + "" + dt.getDate();
+    let filename = GlobalSession.currentUser.email + "-" + dt.getHours() +  "" + dt.getMinutes() + "" + dt.getSeconds() + "-" + me.makeid(7) + ".jpg";
 
-              if(me.props.onAfterTakePicture != null)
-                me.props.onAfterTakePicture(newFile);
-            })
-          }).catch(function(err){
-            me.setState({ loading: false  })
-            let sjson = JSON.stringify(err);
-            Logging.log(err, "error", "CameraPage.onSaveImage() : me.createNewFileInfo()")
-            alert(json);
-          });
+    let folder = FILE_STORAGE_PATH + '/retail-intelligence/pics/' + dtfolder;
+    RNFS.mkdir(folder).then(function(){
+      let savedFile = folder + "/" + filename;
+      let compressed_filename = folder + "/compressed_" + filename;
 
+      RNFS.copyFile(croppedFilename, savedFile ).then(function(){
 
+        CompressImage.createCustomCompressedImage(savedFile, folder, 800, 800, 90 ). then(function(response){
 
-        }).catch(function(err){
-          me.setState({ loading: false  })
-          console.log(err)
-          let sjson = JSON.stringify(err);
-          Logging.log(err, "error", "CameraPage.onSaveImage() : RNFS.copyFile()")
-          alert(json);
+          console.log("RESPONSE FROM createCustomCompressedImage")
+          console.log(response);
+
+          RNFS.moveFile(response.path, compressed_filename).then(function(res){
+
+            //Just for test
+            //compressed_filename = "";
+            me.saveImageContinue(savedFile, compressed_filename);
+          }).catch((err)=>{
+            me.saveImageContinue(savedFile, response.path);
+          })
+
+          
+        }).catch((e)=>{
+          me.saveImageContinue(savedFile, "");
         })
+
       }).catch(function(err){
         me.setState({ loading: false  })
-        Logging.log(err, "error", "CameraPage.onSaveImage() : RNFS.mkdir()")
+        console.log(err)
         let sjson = JSON.stringify(err);
+        Logging.log(err, "error", "CameraPage.onSaveImage() : RNFS.copyFile()")
         alert(json);
       })
+    }).catch(function(err){
+      me.setState({ loading: false  })
+      Logging.log(err, "error", "CameraPage.onSaveImage() : RNFS.mkdir()")
+      let sjson = JSON.stringify(err);
+      alert(json);
+    })
 
-    }
+  }
 
     async onDoneTakePicture(data){
       //

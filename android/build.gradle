@@ -5,7 +5,7 @@ buildscript {
         buildToolsVersion = "29.0.2"
         minSdkVersion = 21
         compileSdkVersion = 29 //26 //29
-        targetSdkVersion =  26 //29 //21 //19
+        targetSdkVersion = 26 //29 //21 //19
 
         //googlePlayServicesVersion = "+" // default: "+"
         //firebaseMessagingVersion = "+" // default: "+"

@@ -32,7 +32,9 @@ export default class UploadHistoryPage extends Component {
                 { label: 'Poster', value: 'poster' },
                 { label: 'Tampak depan', value: 'storefront' },
                 { label: 'Poster A/B', value: 'poster-before-after' },
-                { label: 'Tampak depan A/B', value: 'storefront-before-after' }
+                { label: 'Tampak depan A/B', value: 'storefront-before-after' },
+                { label: 'Etalase', value: 'etalase' },
+                { label: 'Sales Share', value: 'total-sales' }
             ],
             selectedOption: { label: 'Poster', value: 'poster' },
             limit: 10,
@@ -57,6 +59,10 @@ export default class UploadHistoryPage extends Component {
             this.state.selectedOption = { label:  "Poster A/B", value: "poster-before-after" }
         if(this.props.imageCategory == "storefront-before-after")
             this.state.selectedOption = { label:  "Tampak Depan A/B", value: "storefront-before-after" }
+        if(this.props.imageCategory == "etalase")
+            this.state.selectedOption = { label:  "Etalase", value: "etalase" }
+        if(this.props.imageCategory == "total-sales")
+            this.state.selectedOption = { label:  "Sales Share", value: "total-sales" }
         me.loadFiles();
 
     }
@@ -71,6 +77,10 @@ export default class UploadHistoryPage extends Component {
             this.loadStoreFrontFiles();
         else if(this.state.selectedOption.value == "storefront-before-after")
             this.loadStoreFrontBeforeAfterFiles();
+        else if(this.state.selectedOption.value == "etalase")
+            this.loadEtalaseFiles();
+        else if(this.state.selectedOption.value == "total-sales")
+            this.loadTotalSalesFiles();
     }
 
     loadPosterFiles()
@@ -221,6 +231,81 @@ export default class UploadHistoryPage extends Component {
     }
 
 
+    loadEtalaseFiles()
+    {
+        let me = this;
+        let url = GlobalSession.Config.API_HOST + "/report/etalase/byuploader/" + GlobalSession.currentUser.email + "/" + this.state.offset + "/" + this.state.limit;
+        console.log(url);
+
+        let dt = this.state.selectedDate;
+
+        if(this.state.selectedDateAll)
+            dt = "*";
+
+        me.setState({
+            showLoading: true
+        })
+        HttpClient.post(url, { outlet: this.state.selectedOutlet.storeid, date: dt  }, function(response){
+
+            let files = response.payload;
+            console.log(files);
+            files.map(file => {
+                file.selected = false
+            });
+
+            if(files != null)
+            {
+                me.setState({
+                    files: files,
+                    totalAllData: response.allTotal[0].total,
+                    showLoading: false
+                })
+            }
+            
+            me.setState({
+                showLoading: false
+            })
+        })
+    }
+
+    loadTotalSalesFiles()
+    {
+        let me = this;
+        let url = GlobalSession.Config.API_HOST + "/report/totalsales/byuploader/" + GlobalSession.currentUser.email + "/" + this.state.offset + "/" + this.state.limit;
+        console.log(url);
+
+        let dt = this.state.selectedDate;
+
+        if(this.state.selectedDateAll)
+            dt = "*";
+
+        me.setState({
+            showLoading: true
+        })
+        HttpClient.post(url, { outlet: this.state.selectedOutlet.storeid, date: dt  }, function(response){
+
+            let files = response.payload;
+            console.log(files);
+            files.map(file => {
+                file.selected = false
+            });
+
+            if(files != null)
+            {
+                me.setState({
+                    files: files,
+                    totalAllData: response.allTotal[0].total,
+                    showLoading: false
+                })
+            }
+            
+            me.setState({
+                showLoading: false
+            })
+        })
+    }
+
+
     loadLocalFiles(){
         let me = this;
         UploadedFile.findAll({
@@ -337,7 +422,12 @@ export default class UploadHistoryPage extends Component {
         let me = this;
         let promise = new Promise((resolve, reject) => {
             let url = GlobalSession.Config.API_HOST + "/uploadfile/get/" + file.id;
+
+            console.log("loadRemotefile")
+            console.log(url)
             HttpClient.get(url, function(response){
+
+                console.log(response)
                 resolve(response.payload)
             }, function (error){
                 reject(error)
@@ -358,6 +448,16 @@ export default class UploadHistoryPage extends Component {
             else if(file.imageCategory == "storefront")
             {
                 Actions.imageHomeStoreFrontPage({ file: file })
+                //Actions.imageInfoStoreFrontPage({ file: file, mode: 'edit' })
+            }
+            else if(file.imageCategory == "etalase")
+            {
+                Actions.imageHomeEtalasePage({ file: file })
+                //Actions.imageInfoStoreFrontPage({ file: file, mode: 'edit' })
+            }
+            else if(file.imageCategory == "total-sales")
+            {
+                Actions.imageHomeTotalSalesPage({ file: file })
                 //Actions.imageInfoStoreFrontPage({ file: file, mode: 'edit' })
             }
 
@@ -478,6 +578,11 @@ export default class UploadHistoryPage extends Component {
     {
         return (new Date()).toISOString().slice(0, 10)
     }
+
+    back()
+    {
+        Actions.reset("homePage")
+    }
     
     render(){
 
@@ -488,6 +593,10 @@ export default class UploadHistoryPage extends Component {
             <Header style={{backgroundColor: '#FFF'}}>
               <Body>
                     <View style={Style.headerHorizontalLayout} >
+                        <TouchableOpacity onPress={()=> me.back()}>
+                            <Image style={Style.headerImage} resizeMode='contain' source={require('./images/back-dark.png')}></Image>
+                        </TouchableOpacity>
+                        <View style={{width: 30}}></View>
                         <View style={{width: 30}}></View>
                         <Title style={Style.headerTitle}>File-file yang sudah diupload</Title>
                     </View>
@@ -624,13 +733,15 @@ export default class UploadHistoryPage extends Component {
                                 filename = filename[filename.length  -1];
                                 let prefix_url = file.uploaded_filename.replace(filename, "");
 
+                                //let uploaded_filename = prefix_url + "thumbnail_"  + filename;
                                 let uploaded_filename = prefix_url + "thumbnail_"  + filename;
+
 
                                 let url = "";
                                 if(uploaded_filename != null)
                                     url = uploaded_filename.replace("gs://", "https://storage.googleapis.com/");
                                 
-                                
+
                                 return (<ListItem key={file.id}>
                                         <TouchableOpacity onPress={()=> me.viewImage(file)} style={{width: '100%', flex:1, flexDirection: 'row', textAlign: 'left'}} >
                                             <Image style={{ width: 60, height: 60, marginLeft: -15 }} source={{ uri: url}}></Image>

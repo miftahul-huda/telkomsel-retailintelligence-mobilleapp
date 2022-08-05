@@ -14,7 +14,7 @@ import GlobalSession from './GlobalSession';
 import Style from './style';
 import Util from './util/Util';
 import {decode} from 'html-entities';
-
+import { BackHandler } from 'react-native';
 
 export default class SelectStorePage extends Component {
     constructor(props) {
@@ -25,33 +25,124 @@ export default class SelectStorePage extends Component {
             showIndicator: true,
             showSearch: false
         }
+        backHandler = null;
+        this.startTyping =  false;
+        this.typingInterval = 0;
+        this.typeTime = null;
+        this.backHandlerFunction = this.back.bind(this);
+    }
+
+    componentWillMount() {
+        this.backHandler = BackHandler.addEventListener('hardwareBackPress', this.backHandlerFunction)
+    }
+
+
+    componentWillUnmount() {
+        BackHandler.removeEventListener('hardwareBackPress', this.backHandlerFunction)
     }
 
     componentDidMount(){
 
+        
         this.loadStores();
+        let me =  this;
+        //me.fistDisplay();
+    }
+
+    goHome()
+    {
+        Actions.pop(); Actions.pop(); Actions.reset("homePage"); return true;
+    }
+
+    fistDisplay()
+    {
+        let me =  this;
+        let stores = [];
+        stores.push({ storeid: '', store_name: "Cari outlet yg disurvey dengan menekan icon 'cari' di pojok kanan atas. Gunakan ID outlet untuk pencarian." })
+        me.setState({
+            ...me.state,
+            stores: stores,
+            showIndicator: false
+        })
+    }
+
+    searchStoreInLocal(keyword)
+    {
+        console.log('SearchLocal')
+        console.log(keyword)
+
+        let foundStores = [];
+        if(GlobalSession.stores != null)
+        {
+            let idx = 0;
+            for(var i = 0; i <  GlobalSession.stores.length; i++)
+            {
+                let store =  GlobalSession.stores[i];
+                if(store.store_name.toLowerCase().indexOf(keyword.toLowerCase()) > -1 
+                || store.storeid.toLowerCase().indexOf(keyword.toLowerCase()) > -1)
+                {
+                    console.log("found")
+                    console.log(store)
+                    foundStores.push(store);
+                }
+            }
+        }
+
+        return foundStores;
     }
 
     getStores(search){
         let promise = new Promise((resolve, reject)=>{
-            let url = GlobalSession.Config.API_HOST + "/store/by-area/" + GlobalSession.currentUser.area;
-            if(search != undefined && search.trim().length > 0)
-                url = GlobalSession.Config.API_HOST + "/store/search/by-area/" + search + "/" + GlobalSession.currentUser.area;
-
-            
-
-            console.log("get store url")
-            console.log(url);
-            try {
-                HttpClient.get(url, function(res){
-                    resolve(res.payload);
-                }, function(e){
-                    reject(e);
-                });      
-            }catch(e){
-                reject(e);
+            let foundLocal = false;;
+            let result = {}
+            if(GlobalSession.stores != null && GlobalSession.stores.length > 0)
+            {
+                
+                if(search == null)
+                {
+                    result = {success: true, payload: GlobalSession.stores};
+                    foundLocal = true;
+                }
+                else
+                {
+                    let foundStores = this.searchStoreInLocal(search);
+                    if(foundStores.length > 0)
+                    {
+                        foundLocal = true;
+                        result = {success: true, payload: foundStores};
+                    }
+                    else 
+                    {
+                        foundLocal = false;
+                    }
+                }
             }
+            
+            if(foundLocal == false)
+            {
+                let url = GlobalSession.Config.API_HOST + "/store/by-city/" + GlobalSession.currentUser.city;
+                if(search != undefined && search.trim().length > 0)
+                    url = GlobalSession.Config.API_HOST + "/store/search/by-city/" + search + "/" + GlobalSession.currentUser.city;
 
+                console.log("get store url")
+                console.log(url);
+                try {
+                    HttpClient.get(url, function(res){
+                        resolve(res.payload);
+                    }, function(e){
+                        reject(e);
+                    });      
+                }catch(e){
+                    reject(e);
+                }
+            }
+            else 
+            {
+                console.log("Load stores from local...")
+                resolve(result.payload)
+            }
+            
+            
         });
         return promise;
     }
@@ -81,19 +172,51 @@ export default class SelectStorePage extends Component {
             ...this.state,
             searchText: value
         })
-        console.log(value);
-        this.loadStores(value);
+
+        if(this.startTyping == false)
+        {
+            this.startTyping = true;
+            this.typeTime = new Date();
+            this.typingInterval = setInterval(() =>  {
+                
+                let newDt = new Date();
+                var dif = ( newDt. getTime() - this.typeTime. getTime() ) / 1000;
+                if(dif >= 2)
+                {
+                    clearInterval(this.typingInterval);
+                    this.startTyping = false;
+
+                    console.log("-----loadStores------")
+                    
+                    let vlue = this.state.searchText;
+
+                    console.log(vlue )
+                    this.loadStores(vlue);
+
+                }
+
+
+            }, 100)
+
+        }
+        else {
+            this.typeTime = new Date();
+        }
+        
     }
 
 
 
     back()
     {
+        console.log("back()")
+
         if(this.props.onBack != null)
         {
 
-            this.props.onBack();
             Actions.pop();
+            this.props.onBack();
+            
         }
         else
             Actions.reset("homePage")
@@ -101,9 +224,51 @@ export default class SelectStorePage extends Component {
 
     selectStore(value)
     {
-        if(this.props.onAfterSelectStore != null)
-            this.props.onAfterSelectStore(value);
-        Actions.pop();
+        var me = this;
+
+        this.checkStoreFirst(value.storeid, function(exists){
+            if(exists == true)
+            {
+                if(me.props.onAfterSelectStore != null)
+                    me.props.onAfterSelectStore(value);
+                Actions.pop();
+            }
+            else 
+            {
+                alert("Pengguna " + GlobalSession.currentUser.email + " tidak bisa mensurvey outlet: " + value.storeid)
+            }
+        })
+
+    }
+
+    checkStoreFirst(storeid, callback)
+    {
+        var me = this;
+        this.setState({
+            showIndicator: true
+        })
+        let url = GlobalSession.Config.API_HOST + "/storeuser/check/" + GlobalSession.currentUser.email + "/" + GlobalSession.currentUser.sfcode + "/" + storeid;
+        console.log("checkStoreFirst")
+        console.log(url)
+        HttpClient.get(url, function(response){
+            if(response.payload.exists == true)
+            {
+                if(callback  != null)
+                    callback(true);
+            }
+            else
+            {
+                if(callback  != null)
+                    callback(false);
+            }
+            me.setState({
+                showIndicator: false
+            })
+        }, function(){
+            me.setState({
+                showIndicator: false
+            })
+        });
     }
 
     addStoreToDatabase(value)
@@ -126,6 +291,15 @@ export default class SelectStorePage extends Component {
         return promise;
     }
 
+    onAfterSaveNewOutlet(store)
+    {
+        GlobalSession.currentStore = store;
+        this.setState({
+            ...this.state,
+            showSearch: false
+        })
+    }
+
     addStore()
     {
         /*var me = this;
@@ -138,7 +312,7 @@ export default class SelectStorePage extends Component {
             Logging.log(err, "error", "SelectStorePage.addStore().me.addStoreToDatabase()")
         })*/
 
-        Actions.addStorePage();
+        Actions.addStorePage({ onAfterSaveNewOutlet: this.onAfterSaveNewOutlet.bind(this) });
     }
 
     openSearch()
@@ -213,7 +387,7 @@ export default class SelectStorePage extends Component {
                         <View style={{width: 10}}></View>
                         <View style={{width: '90%', flex: 1, flexDirection: 'row'}}>
                             <Image source={require('./images/search-dark.png')} style={{ marginLeft: 20, width: 20, height: 20}} resizeMode="contain"></Image>
-                            <TextInput  onChangeText={value => { console.log(value); this.search(value) }}  
+                            <TextInput  onChangeText={value => { this.search(value) }}  
                                 ref={(input) => { this.searchInput = input; }} 
                                 style={{ borderWidth: 1, borderRadius: 6, width: '95%',  borderColor: '#ccc', color: '#666', paddingLeft: 40, marginTop: -8, marginLeft: -30, height: 40}} 
                                 placeholder="Cari nama outlet atau ID outlet"/>
@@ -236,7 +410,7 @@ export default class SelectStorePage extends Component {
                         <Text style={{ fontWeight: 'bold' }}>Terakhir dipilih</Text>
                         <ListItem key={GlobalSession.currentStore.id}>
                             <TouchableOpacity onPress={()=> me.selectStore(GlobalSession.currentStore)} style={{flex:1, flexDirection: 'row'}} >
-                                <Text style={{ marginLeft: '5%', fontWeight: 'normal' }}>{GlobalSession.currentStore.store_name}</Text>
+                                <Text style={{ marginLeft: '5%', fontWeight: 'normal' }}>{GlobalSession.currentStore.storeid} - {GlobalSession.currentStore.store_name}</Text>
                             </TouchableOpacity>
                         </ListItem>
                     </List>
@@ -253,7 +427,7 @@ export default class SelectStorePage extends Component {
                                 this.state.stores.map(function(store) {
                                     let storeid = store.storeid;
                                     storeid = storeid.replace(/" "/gi, "");
-                                    console.log(store);
+                                    //console.log(store);
                                     let r = Util.makeid(10);
                                     r = r + "-" + store.id;
 
@@ -265,13 +439,14 @@ export default class SelectStorePage extends Component {
                                                 <Text style={Style.contentSubTitle}>{store.store_name}</Text>
                                             </View>
                                             <View>
-                                                <Text style={Style.contentLight}>{store.store_area}</Text>
+                                                <Text style={Style.contentLight}>{store.store_area}, {store.store_city}</Text>
                                             </View>
                                         </TouchableOpacity>
                                 
                                     </ListItem>)
                                 }) }
                         </List>
+                        
                     </ScrollView>
                 </View>
                 :

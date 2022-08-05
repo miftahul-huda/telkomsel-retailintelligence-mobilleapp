@@ -71,6 +71,7 @@ export default class EditPackageItemPage extends SharedPage {
             subItemCategories: [],
             filePackageSubItems: [],
             showIndicator: false,
+            showButtons: false,
         }
     }
 
@@ -860,6 +861,20 @@ export default class EditPackageItemPage extends SharedPage {
         })
     }
 
+    isCloseToBottom({ layoutMeasurement, contentOffset, contentSize }) 
+    {
+        return layoutMeasurement.height + contentOffset.y >= contentSize.height - 1;
+    }
+
+    viewImage(){
+        let file = this.props.file;
+        this.state.selectedFile = file;
+
+        Actions.viewImagePage({ editMode:true, file: file, onSaveCropImage: Util.onSaveCropImage.bind(this) })
+    }
+
+    
+
     render() {
 
         var me = this;
@@ -896,7 +911,22 @@ export default class EditPackageItemPage extends SharedPage {
                 </View>
             </Header>
 
-            <Content style={{backgroundColor: '#eee'}}>
+            <Content style={{backgroundColor: '#eee'}} onScroll={({ nativeEvent }) => {
+                if (this.isCloseToBottom(nativeEvent)) {
+                    //console.warn("Reached end of page");
+                    this.setState({
+                        ...this.state,
+                        showButtons: true
+                    })
+                }
+                else
+                {
+                    this.setState({
+                        ...this.state,
+                        showButtons: false
+                    })
+                }
+            }}>
                 
                     <View style={{ display: 'none' }}>
                         <Button style = {{display: 'none', alignSelf: 'center', margin: 5, 
@@ -911,6 +941,29 @@ export default class EditPackageItemPage extends SharedPage {
                         
                         </Button>
                     </View>
+                    <View style={{height: 15}}></View>
+                    <View style={{width: '100%', height: 100, backgroundColor: '#fff', padding: 20}}>
+                        <View style={Style.horizontalLayout}>
+                            <View style={{width: '95%', flex:1, flexDirection: 'row'}}>
+                                <View style={{marginTop: -10}}>
+                                    <Image source={{ uri: 'file://' + this.props.file.filename }} style={Style.contentImage} resizeMode='contain' ></Image>
+                                </View>
+                                <View style={{width: 10}}></View>
+                                <View style={{width: '70%'}}>
+                                    <Text style={Style.content}>{this.state.shortFilename}</Text>
+                                    <View style={{height: 5}}></View>
+                                    <Text style={Style.content}>{this.props.file.picture_taken_date}</Text>
+                                </View>
+                            </View>
+
+                            <TouchableOpacity onPress={() => this.viewImage()}>
+                                <Text style={Style.contentRedBold}>
+                                    Lihat Gambar
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                    <View style={{height: 15}}></View>
                     <View style={{height: 10}}></View>
                     {
                         this.getDialog()
@@ -1062,11 +1115,14 @@ export default class EditPackageItemPage extends SharedPage {
                     <View style={{marginTop: '10%', marginLeft: '10%'}}>
                         <Label>* Harus diisi</Label>
                     </View>
-                    <View style={{height: 10}}></View>
+                    <View style={{height: 140}}></View>
 
                     
                     
             </Content>
+
+            {
+                    (this.state.showButtons) ?
             <Footer style={{height: 200, borderColor: '#eee', borderWidth: 2}}>
                 <View style={{padding: '5%', backgroundColor: '#fff'}}>
                         <Button style={Style.buttonRed} onPress={()=>this.ok()}>
@@ -1089,7 +1145,7 @@ export default class EditPackageItemPage extends SharedPage {
                             </View>
                         </Button>
                 </View>
-            </Footer>
+            </Footer>: null}
             </Container>
         );
     }

@@ -356,6 +356,62 @@ export default class Util
       }
     }
 
+    static async setEtalaseTotalItems(files, fileids)
+    {
+      try
+      {
+        let ids = fileids.join();
+
+        let sequelize = Util.getSequelize();
+        const items = await sequelize.query("SELECT upload_file_id as fileid, count(*) as total FROM `etalaseitem` where upload_file_id in (" + ids + ") GROUP BY upload_file_id", { type: QueryTypes.SELECT });
+        items.map((item)=>{
+          files.map((file)=>{
+            if(file.id == item.fileid)
+            {
+              file.totalItems = item.total;
+            }
+          })
+        })
+  
+        return files;
+
+      }
+      catch(err)
+      {
+        console.log("ERRRRRROR")
+        console.log(err)
+        throw err;
+      }
+    }
+
+    static async setTotalSalesTotalItems(files, fileids)
+    {
+      try
+      {
+        let ids = fileids.join();
+
+        let sequelize = Util.getSequelize();
+        const items = await sequelize.query("SELECT upload_file_id as fileid, count(*) as total FROM `totalsales` where upload_file_id in (" + ids + ") GROUP BY upload_file_id", { type: QueryTypes.SELECT });
+        items.map((item)=>{
+          files.map((file)=>{
+            if(file.id == item.fileid)
+            {
+              file.totalItems = item.total;
+            }
+          })
+        })
+  
+        return files;
+
+      }
+      catch(err)
+      {
+        console.log("ERRRRRROR")
+        console.log(err)
+        throw err;
+      }
+    }
+
     static async setTotalItems(files)
     {
       let posterids = [];
@@ -366,6 +422,10 @@ export default class Util
       let posterbas = [];
       let storefrontbaids = [];
       let storefrontbas = [];
+      let totalSalesIds = [];
+      let totalSales = [];
+      let etalaseIds = [];
+      let etalase = [];
 
       files.map((file)=>{
 
@@ -383,6 +443,16 @@ export default class Util
         {
           storefrontids.push(file.id);
           storefronts.push(file);
+        }
+        else if(file.imageCategory == "etalase")
+        {
+          etalaseIds.push(file.id);
+          etalase.push(file);
+        }
+        else if(file.imageCategory == "total-sales")
+        {
+          totalSalesIds.push(file.id);
+          totalSales.push(file);
         }
         else if(file.imageCategory == "poster-before-after")
         {
@@ -410,7 +480,8 @@ export default class Util
         updatedfiles = await Util.setStoreFrontTotalItems(updatedfiles, storefrontids);
         updatedfiles = await Util.setPosterBATotalItems(updatedfiles, posterbaids);
         updatedfiles = await Util.setStoreFrontBATotalItems(updatedfiles, storefrontbaids);
-
+        updatedfiles = await Util.setEtalaseTotalItems(updatedfiles, etalaseIds);
+        updatedfiles = await Util.setTotalSalesTotalItems(updatedfiles, totalSalesIds);
         return updatedfiles;
         //return files;
       }

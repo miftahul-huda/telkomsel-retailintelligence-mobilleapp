@@ -19,10 +19,9 @@ import Util from './util/Util';
 
 import GetLocation from 'react-native-get-location';
 import FilePackageItem from './model/FilePackageItem';
-GlobalSession = require( './GlobalSession');
-
 import Sequelize from "rn-sequelize";
 import Uploader from './util/Uploader';
+import GlobalSession from './GlobalSession';
 const Op = Sequelize.Op;
 
 
@@ -65,6 +64,41 @@ export default class UploadPage extends SharedPage {
                 value: 'total-sales',
                 label: "Tot. Sales"
             }]
+        }
+
+        if(GlobalSession.currentMenuGroup == "poster")
+        {
+            this.state.imageCategories = [{
+                value: "poster",
+                label: "Poster"
+            },
+            {
+                value: 'poster-before-after',
+                label: "Poster A/B"
+            }]
+        }
+        else
+        {
+            this.state.imageCategories = [
+                {
+                    value:  "storefront",
+                    label: "Tampak Depan"
+                },
+                {
+                    value: 'storefront-before-after',
+                    label: "Tampak Depan A/B"
+                }
+                ,
+                {
+                    value: 'etalase',
+                    label: "Etalase"
+                }
+                ,
+                {
+                    value: 'total-sales',
+                    label: "Tot. Sales"
+                }
+            ]
         }
     }
 
@@ -155,6 +189,9 @@ export default class UploadPage extends SharedPage {
         {
             ands.push({ beforeAfterType: "before" })
         }
+
+        console.log("ands")
+        console.log(ands)
 
         UploadedFile.findAll({
             where:{
@@ -558,7 +595,24 @@ export default class UploadPage extends SharedPage {
         this.state.files.map(async function(file) {
             if(file.selected){
 
-                await RNFS.unlink(file.filename);
+                try
+                {
+                    await RNFS.unlink(file.filename);
+                }
+                catch(err)
+                {
+
+                }
+
+                try
+                {
+                    await RNFS.unlink(file.compressed_filename);
+                }
+                catch(err)
+                {
+                    
+                }
+                
                 await me.deleteSelectedFileEvent(file);
   
             }
@@ -614,8 +668,14 @@ export default class UploadPage extends SharedPage {
 
     getFilenameOnly(path)
     {
-        let ff = path.split('/');
-        return ff[ff.length - 1];
+        if(path != null)
+        {
+            let ff = path.split('/');
+            return ff[ff.length - 1];
+        }
+        else 
+            return "";
+ 
     }
 
     async getFiles2ListItem(files)

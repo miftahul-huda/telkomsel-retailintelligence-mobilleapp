@@ -88,6 +88,7 @@ export default class ImageCropperPage extends React.Component {
               width: '80%', backgroundColor: '#fff'}}
                   onPress= {() => {
                       Actions.pop()
+                      Actions.reset("homePage")
                       
                   }}>
                   <View style={{flex: 1, flexDirection: 'row', width:'90%', alignSelf: 'center', alignItems:'center', justifyContent:'center',}}>

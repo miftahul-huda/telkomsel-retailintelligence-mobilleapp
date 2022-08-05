@@ -26,6 +26,8 @@ import { stat } from 'react-native-fs';
 import Uploader from './util/Uploader';
 import { Accelerometer } from 'expo';
 const Op = Sequelize.Op;
+import * as RNFS from 'react-native-fs';
+
 
 
 
@@ -378,7 +380,9 @@ export default class BeforeAfterStoreFrontHomePage extends SharedPage {
 
     async loadLocalStoreFrontItemsBefore()
     {
+        console.log("loadLocalStoreFrontItemsBefore")
         let storeFrontItems = await StoreFrontItem.findAll({ where: { upload_file_id: this.state.fileBefore.id }});
+        console.log(storeFrontItems);
 
         this.setState({
             storeFrontItemsBefore: storeFrontItems
@@ -420,7 +424,10 @@ export default class BeforeAfterStoreFrontHomePage extends SharedPage {
 
     async loadLocalStoreFrontItemsAfter()
     {
+        console.log("loadLocalStoreFrontItemsAfter")
         let storeFrontItems = await StoreFrontItem.findAll({ where: { upload_file_id: this.state.fileAfter.id }});
+        console.log(storeFrontItems)
+
         this.setState({
             storeFrontItemsAfter: storeFrontItems
         })
@@ -549,7 +556,7 @@ export default class BeforeAfterStoreFrontHomePage extends SharedPage {
 
     callOperatorFilter(me, uri,  callback, callbackError){
         var url = GlobalSession.Config.API_HOST_DOMINANT_OPERATOR;
-        uri = uri.replace("https://storage.googleapis.com/", 'gs://')
+        //uri = uri.replace("https://storage.googleapis.com/", 'gs://')
         var data = { url: uri }
 
         console.log("Operator Filter")
@@ -559,7 +566,7 @@ export default class BeforeAfterStoreFrontHomePage extends SharedPage {
         HttpClient.post(url, data, function(res){
 
             if(callback !=null)
-                callback(res);
+                callback(res.payload);
             
         }, function(err){
             console.log("Retrieve operator error")
@@ -568,7 +575,7 @@ export default class BeforeAfterStoreFrontHomePage extends SharedPage {
 
             if(callbackError != null)
                 callbackError(me, uri);
-            Logging.log(err, "error", "ImageInfoStoreFrontPage.callOperatorFilter().HttpClient.post() " + uri)
+            //Logging.log(err, "error", "ImageInfoStoreFrontPage.callOperatorFilter().HttpClient.post() " + uri)
         });
     }
 
@@ -576,7 +583,7 @@ export default class BeforeAfterStoreFrontHomePage extends SharedPage {
     {
         var selOp = operators[0];
         operators.forEach(function(item){
-            if(item[1] > selOp[1])
+            if(item.percentage > selOp.percentage)
                 selOp = item;
         });
         return selOp;
@@ -594,6 +601,7 @@ export default class BeforeAfterStoreFrontHomePage extends SharedPage {
             {
                 let storeFrontItems = [];
                 let largestOp = me.getTheLargestCoverageOperator(me, operators);
+                console.log("largestOp")
                 console.log(largestOp)
 
                 await StoreFrontItem.destroy({where: { upload_file_id: file.id }})
@@ -601,15 +609,20 @@ export default class BeforeAfterStoreFrontHomePage extends SharedPage {
                 operators.map(async (operator)=>{
                     console.log(operator)
                     let max =  Util.makeid(10);
-                    if(operator[1] > 0)
+                    if(operator.percentage > 0)
                     {
-                        let item = { id:null, operator: operator[0].toLowerCase(), operatorText: operator[0] , percentage: operator[1],  tempid: max };
+                        let item = { id:null, operator: operator.operator.toLowerCase(), operatorText: operator.operatorText , percentage: operator.percentage,  tempid: max };
                         item.upload_file_id = file.id;
+                        storeFrontItems.push(item);
                         await StoreFrontItem.create(item);
                     }
                 })
-                await UploadedFile.update({ operatorDominant: largestOp[0].toLowerCase(), operatorDominantText: me.getOperatorName( largestOp[0]) },
+                await UploadedFile.update({ operatorDominant: largestOp.operator.toLowerCase(), operatorDominantText: largestOp.operatorText },
                 {where:{id: file.id } })                
+
+                storeFrontItems = await StoreFrontItem.findAll({where: { upload_file_id: file.id }});
+                console.log("STOREEFRONTITEMS")
+                console.log(storeFrontItems);
 
             }
 
@@ -648,7 +661,7 @@ export default class BeforeAfterStoreFrontHomePage extends SharedPage {
                 callback(uri);
 
         }, function(err){
-            Logging.log(err, "error", "ImageInfoPage.uploadToGcs().HttpClient.upload()")
+            //Logging.log(err, "error", "ImageInfoPage.uploadToGcs().HttpClient.upload()")
             if(callbackError != null)
                 callbackError(err);
         });
@@ -690,33 +703,46 @@ export default class BeforeAfterStoreFrontHomePage extends SharedPage {
 
     autofill()
     {
+
         var me =this;
-        this.state.autofillBeforeDone = 0;
-        this.state.autofillBeforeAfter = 0;
-        this.autofillNext( this.state.fileBefore, function(){
-            
-            me.state.autofillBeforeDone = 1;
-            me.doneAutoFill(me);
-            
-        }, function(){
-            
-            me.state.autofillBeforeDone = 2;
-            me.doneAutoFill(me);
-            
-        });
+        if(this.state.fileBefore != null)
+        {
+            this.state.autofillBeforeDone = 0;
+            this.state.autofillBeforeAfter = 0;
+            this.autofillNext( this.state.fileBefore, function(){
+                
+                me.state.autofillBeforeDone = 1;
+                me.doneAutoFill(me);
+                
+            }, function(){
+                
+                me.state.autofillBeforeDone = 2;
+                me.doneAutoFill(me);
+                
+            });
+        }
+
 
         
-        this.autofillNext( this.state.fileAfter, function(){
+        if(this.state.fileAfter != null)
+        {
+            this.autofillNext( this.state.fileAfter, function(){
             
-            me.state.autofillBeforeDone = 1;
-            me.doneAutoFill(me);
-            
-        }, function(){
-            
-            me.state.autofillBeforeDone = 2;
-            me.doneAutoFill(me);
-            
-        });
+                me.state.autofillBeforeDone = 1;
+                me.doneAutoFill(me);
+                
+            }, function(){
+                
+                me.state.autofillBeforeDone = 2;
+                me.doneAutoFill(me);
+                
+            });
+
+        }
+        
+
+        
+        
     }
 
     doneAutoFill(me)
@@ -812,7 +838,7 @@ export default class BeforeAfterStoreFrontHomePage extends SharedPage {
 
                         <TouchableOpacity onPress={() => this.viewImage(file)}>
                             <Text style={Style.contentRedBold}>
-                                Edit
+                                Lihat
                             </Text>
                         </TouchableOpacity>
                     </View>
@@ -885,6 +911,43 @@ export default class BeforeAfterStoreFrontHomePage extends SharedPage {
 
         Actions.takePictureBeforeAfterPage({ store_id: this.state.fileBefore.store_id, store_name: this.state.fileBefore.store_name, imageCategory: "storefront-before-after", beforeAfterType: "after", beforeAfterID: this.state.fileBefore.beforeAfterID })
     }
+
+    async delete()
+    {
+        var me = this;
+        Alert.alert("Konfirmasi hapus", "Data akan dihapus, apakah anda yakin?", [
+            {
+                text:  "Ya",
+                onPress: async ()=>{
+
+                    if(me.state.fileBefore != null)
+                    {
+                        
+                        await StoreFrontItem.destroy({ where: { upload_file_id: me.state.fileBefore.id }  })
+                        await UploadedFile.destroy({ where: { id: me.state.fileBefore.id } })
+                        try { await RNFS.unlink(me.state.fileBefore.filename) } catch (e) {}
+                        try { await RNFS.unlink(me.state.fileBefore.compressed_filename) } catch (e) {}
+                    }
+
+                    if(me.state.fileAfter != null)
+                    {
+                        await StoreFrontItem.destroy({ where: { upload_file_id: me.state.fileAfter.id }  })
+                        await UploadedFile.destroy({ where: { id: me.state.fileAfter.id } })
+                        try { await RNFS.unlink(me.state.fileAfter.filename) } catch (e) {}
+                        try { await RNFS.unlink(me.state.fileAfter.compressed_filename) } catch (e) {}
+                    }
+
+                    alert("Data telah dihapus")
+                    Actions.reset("uploadPage", { imageCategory: "storefront-before-after", imageStatus: "draft" })
+
+                }
+            },
+            {
+                text: "Tidak"
+            }
+        ])
+    }
+
 
     render()
     {
@@ -972,7 +1035,7 @@ export default class BeforeAfterStoreFrontHomePage extends SharedPage {
                     {
                         //this.getFooter(1)
                     }
-                    <Footer style={{height: 200, borderColor:'#eee', borderWidth: 2}}>
+                    <Footer style={{height: 240, borderColor:'#eee', borderWidth: 2}}>
                     {(this.state.showProgress) ? <ActivityIndicator size="large" color="#FF0000"></ActivityIndicator>
                     :
                         <View style={{backgroundColor: '#fff', padding: '5%'}}>
@@ -993,6 +1056,11 @@ export default class BeforeAfterStoreFrontHomePage extends SharedPage {
                                     <Button style={Style.button} onPress={()=>this.setStatus("draft")}>
                                         <View style={{ alignItems: 'center', width: '100%' }}>
                                             <Text style={{color: '#666'}}>Simpan sebagai draft</Text>
+                                        </View>
+                                    </Button>
+                                    <Button style={Style.button} onPress={()=>this.delete()}>
+                                        <View style={{ alignItems: 'center', width: '100%' }}>
+                                            <Text style={{color: '#666'}}>Hapus</Text>
                                         </View>
                                     </Button>
                                 

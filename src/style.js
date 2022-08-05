@@ -1,27 +1,27 @@
 const Style = {
     contentTitle: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: 'bold',
         color: '#666',
         alignSelf: 'flex-start'
     }
     ,
     contentSubTitle: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: 'normal'  ,
         color: '#666',
         alignSelf: 'flex-start'     
     }
     ,
     contentSubTitleBlue: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: 'normal'  ,
         color: 'navy',
         alignSelf: 'flex-start'     
     }
     ,
     contentSubTitleBlueBold: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: 'bold'  ,
         color: 'navy',
         alignSelf: 'flex-start'     
@@ -30,6 +30,13 @@ const Style = {
     content: {
         fontSize: 16,
         fontWeight: 'normal',
+        color: '#333',
+        alignSelf: 'flex-start'
+    }
+    ,
+    contentNewBold: {
+        fontSize: 16,
+        fontWeight: 'bold',
         color: '#333',
         alignSelf: 'flex-start'
     }
@@ -70,7 +77,7 @@ const Style = {
     }
     ,
     contentRedBoldLarger: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: 'bold',
         color: '#CF0202'
     }
@@ -174,7 +181,7 @@ const Style = {
     button:
     {
         alignSelf: 'center', margin: 0, 
-        width: '100%', backgroundColor: 'transparent', borderRadius: 3, borderColor: '#999', borderWidth: 0
+        width: '100%', backgroundColor: 'transparent', borderRadius: 6, borderColor: '#999', borderWidth: 0
         ,
         height: 50
     }
@@ -182,7 +189,7 @@ const Style = {
     buttonDark:
     {
         alignSelf: 'center', margin: 0, 
-        width: '100%', backgroundColor: '#666', borderRadius: 3, borderColor: '#666', borderWidth: 1,
+        width: '100%', backgroundColor: '#666', borderRadius: 6, borderColor: '#666', borderWidth: 1,
         color: '#FFF',
         height: 50
     }
@@ -240,6 +247,8 @@ const Style = {
     ,
     buttonRed:
     {
+
+        
         backgroundColor: '#CF0202',
         width: '100%',
         alignContent: 'center',
@@ -247,21 +256,34 @@ const Style = {
         alignSelf: 'center',
         borderWidth: 1,
         borderColor: '#CF0202',
-        borderRadius: 3,
+        borderRadius: 6,
+        height: 50
+    }
+    ,
+    buttonNavy:
+    {
+        backgroundColor: '#141c40',
+        width: '100%',
+        alignContent: 'center',
+        alignItems: 'center',
+        alignSelf: 'center',
+        borderWidth: 1,
+        borderColor: '#141c40',
+        borderRadius: 6,
         height: 50
     }
     ,
     textWhite:
     {
         color: '#ffffff',
-        fontSize: 16,
-        fontWeight: 'bold'
+        fontSize: 14,
+        fontWeight:  'bold'
     }
     ,
     textDark:
     {
         color: '#333333',
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: 'bold'
     }
 

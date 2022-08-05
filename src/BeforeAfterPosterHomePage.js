@@ -21,11 +21,14 @@ import Util from './util/Util'
 import Sequelize from "rn-sequelize";
 import { TouchableOpacity } from 'react-native-gesture-handler';
 import FilePackageItem from './model/FilePackageItem';
+import FilePackageSubItem from './model/FilePackageSubItem';
+
 import { call, Transitioning } from 'react-native-reanimated';
 import { stat } from 'react-native-fs';
 import Uploader from './util/Uploader';
 import { Accelerometer } from 'expo';
 const Op = Sequelize.Op;
+import * as RNFS from 'react-native-fs';
 
 
 
@@ -881,7 +884,7 @@ export default class BeforeAfterPosterHomePage extends SharedPage {
 
                         <TouchableOpacity onPress={() => this.viewImage(file)}>
                             <Text style={Style.contentRedBold}>
-                                Edit
+                                Lihat
                             </Text>
                         </TouchableOpacity>
                     </View>
@@ -990,6 +993,59 @@ export default class BeforeAfterPosterHomePage extends SharedPage {
         Actions.takePictureBeforeAfterPage({ store_id: this.state.fileBefore.store_id, store_name: this.state.fileBefore.store_name, imageCategory: "poster-before-after", beforeAfterType: "after", beforeAfterID: this.state.fileBefore.beforeAfterID })
     }
 
+    getFilePackageItemIds(filaPakcageItems)
+    {
+        let ids = [];
+        filaPakcageItems.map(file => {
+            ids.push(file.id);
+        })
+
+        return ids;
+    }
+
+    async delete()
+    {
+        var me = this;
+        Alert.alert("Konfirmasi hapus", "Data akan dihapus, apakah anda yakin?", [
+            {
+                text:  "Ya",
+                onPress: async ()=>{
+
+                    if(me.state.fileBefore != null)
+                    {
+                        let filePackageItems = await FilePackageItem.findAll({ where: { upload_file_id: me.state.fileBefore.id }  });
+                        let ids = this.getFilePackageItemIds(filePackageItems);
+    
+                        await FilePackageSubItem.destroy({ where: { packageItemId: ids } });
+                        await FilePackageItem.destroy({ where: { upload_file_id: me.state.fileBefore.id }  })
+                        await UploadedFile.destroy({ where: { id: me.state.fileBefore.id } })
+                        try { await RNFS.unlink(me.state.fileBefore.filename) } catch (e) {}
+                        try { await RNFS.unlink(me.state.fileBefore.compressed_filename) } catch (e) {}
+                    }
+
+                    if(me.state.fileAfter != null)
+                    {
+                        let filePackageItems = await FilePackageItem.findAll({ where: { upload_file_id: me.state.fileAfter.id }  });
+                        let ids = this.getFilePackageItemIds(filePackageItems);
+    
+                        await FilePackageSubItem.destroy({ where: { packageItemId: ids } });
+                        await FilePackageItem.destroy({ where: { upload_file_id: me.state.fileAfter.id }  })
+                        await UploadedFile.destroy({ where: { id: me.state.fileAfter.id } })
+                        try { await RNFS.unlink(me.state.fileAfter.filename) } catch (e) {}
+                        try { await RNFS.unlink(me.state.fileAfter.compressed_filename) } catch (e) {}
+                    }
+
+                    alert("Data telah dihapus")
+                    Actions.reset("uploadPage", { imageCategory: "poster-before-after", imageStatus: "draft" })
+
+                }
+            },
+            {
+                text: "Tidak"
+            }
+        ])
+    }
+
     render()
     {
         var me = this;
@@ -1079,7 +1135,7 @@ export default class BeforeAfterPosterHomePage extends SharedPage {
                     {
                         //this.getFooter(1)
                     }
-                <Footer style={{height: 200, borderColor:'#eee', borderWidth: 2}}>
+                <Footer style={{height: 260, borderColor:'#eee', borderWidth: 2}}>
                     {(this.state.showProgress) ? <ActivityIndicator size="large" color="#FF0000"></ActivityIndicator>
                         :
                         <View style={{backgroundColor: '#fff', padding: '5%'}}>
@@ -1101,6 +1157,11 @@ export default class BeforeAfterPosterHomePage extends SharedPage {
                                     <Button style={Style.button} onPress={()=>this.setStatus("draft")}>
                                         <View style={{ alignItems: 'center', width: '100%' }}>
                                             <Text style={{color: '#666'}}>Simpan sebagai draft</Text>
+                                        </View>
+                                    </Button>
+                                    <Button style={Style.button} onPress={()=>this.delete()}>
+                                        <View style={{ alignItems: 'center', width: '100%' }}>
+                                            <Text style={{color: '#666'}}>Hapus</Text>
                                         </View>
                                     </Button>
                                 

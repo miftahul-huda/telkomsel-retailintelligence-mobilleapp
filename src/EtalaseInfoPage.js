@@ -219,10 +219,13 @@ export default class EtalaseInfoPage extends SharedPage
 
     }
 
-    viewImage()
-    {
+    viewImage(){
+        let file = this.props.file;
+        this.state.selectedFile = file;
 
+        Actions.viewImagePage({ editMode:true, file: file, onSaveCropImage: Util.onSaveCropImage.bind(this) })
     }
+
 
     selectPosterType(item)
     {
@@ -296,6 +299,9 @@ export default class EtalaseInfoPage extends SharedPage
         f = JSON.parse(f);
 
         let url = GlobalSession.Config.API_HOST + "/uploadfile/update/" + this.state.file.id;
+
+        console.log("Save remote etalase")
+        console.log(url)
         HttpClient.post(url, f, function(response){
             console.log(response)
             console.log("Saved")

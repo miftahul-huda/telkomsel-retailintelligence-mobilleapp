@@ -4,4 +4,5 @@ module.exports = {
     currentStore: null,
     imageCategory: null,
     Config: null,
+    currentMenuGroup: null
 };

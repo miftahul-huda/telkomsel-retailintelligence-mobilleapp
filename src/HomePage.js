@@ -721,23 +721,39 @@ export default class HomePage extends SharedPage {
 
         if(status == "uploaded")
         {
-            this.loadPosterFiles();
-            this.loadStoreFrontFiles();
-            this.loadPosterBeforeAfterFiles();
-            this.loadStoreFrontBeforeAfterFiles();
-            this.loadTotalSalesFiles();
-            this.loadEtalaseFiles();
-            this.state.status = "uploaded"
+            if(GlobalSession.currentMenuGroup == "poster")
+            {
+                this.loadPosterFiles();
+                this.loadPosterBeforeAfterFiles();
+            }
+            else
+            {
+                this.loadStoreFrontFiles();
+                this.loadStoreFrontBeforeAfterFiles();
+                this.loadTotalSalesFiles();
+                this.loadEtalaseFiles();
+                this.state.status = "uploaded"
+            }
+            
+            
             //this.state.textStatus = "Terunggah";
         }
         else
         {
-            this.loadLocalPosterFiles(status);
-            this.loadLocalStoreFrontFiles(status);
-            this.loadLocalPosterBeforeAfterFiles(status);
-            this.loadLocalStoreFrontBeforeAfterFiles(status);
-            this.loadLocalEtalaseFiles(status);
-            this.loadLocalTotalSalesFiles(status);
+            if(GlobalSession.currentMenuGroup == "poster")
+            {
+                this.loadLocalPosterFiles(status);
+                this.loadLocalPosterBeforeAfterFiles(status);
+            }
+            else
+            {
+                this.loadLocalStoreFrontFiles(status);
+                this.loadLocalStoreFrontBeforeAfterFiles(status);
+                this.loadLocalEtalaseFiles(status);
+                this.loadLocalTotalSalesFiles(status);
+    
+            }
+            
             this.state.status = status;
             //this.state.textStatus = "Draft";
         }
@@ -754,7 +770,7 @@ export default class HomePage extends SharedPage {
                     <View style={{width: '50%', marginTop: '-5%'}}>
                         <Image source={require('./images/logo.png')} style={{width: '60%'}} resizeMode='contain'></Image>
                     </View>
-                    <View style={{width: '40%'}}></View>
+                    <View style={{width: '40%'}}><Text style={{verticalAlign: 'middle', marginTop: '12%', marginLeft: '-20%'}}>V.{GlobalSession.Config.VERSION} {GlobalSession.Config.ENVIRONMENT}</Text></View>
                     <View style={{width: '10%'}}>
                         <TouchableOpacity onPress={this.batchUpload.bind(this)}>
                             <Image source={require('./images/reload.png')} style={{width: '60%', marginTop: '20%'}} resizeMode='contain'></Image>
@@ -836,6 +852,8 @@ export default class HomePage extends SharedPage {
                         </View>
                     </View>
                 </View>
+                { (GlobalSession.currentMenuGroup == "poster") ? 
+                <>
                 <View style={{height: 20}}></View>
                 <View style={{width: '100%', height: 400, backgroundColor: '#fff', padding: 20}}>
                     <View style={{height: 30}}>
@@ -895,6 +913,10 @@ export default class HomePage extends SharedPage {
                     </ScrollView>
                     
                 </View>
+                </>:  null }
+
+                { (GlobalSession.currentMenuGroup == "av-index") ? 
+                <>
                 <View style={{height: 20}}></View>
                 <View style={{width: '100%', height: 400, backgroundColor: '#fff', padding: 20}}>
                     <View style={{height: 30}}>
@@ -951,6 +973,10 @@ export default class HomePage extends SharedPage {
 
                     </ScrollView>
                 </View>
+                </>:null }
+                
+                { (GlobalSession.currentMenuGroup == "poster") ? 
+                <>
                 <View style={{height: 20}}></View>
                 <View style={{width: '100%', height: 400, backgroundColor: '#fff', padding: 20}}>
                     <View style={{height: 30}}>
@@ -1003,10 +1029,12 @@ export default class HomePage extends SharedPage {
                             }) 
                         }
 
-                        
-
                     </ScrollView>
                 </View>
+                </> : null }
+
+                { (GlobalSession.currentMenuGroup == "av-index") ? 
+                <>
                 <View style={{height: 20}}></View>
                 <View style={{width: '100%', height: 400, backgroundColor: '#fff', padding: 20}}>
                     <View style={{height: 30}}>
@@ -1063,7 +1091,10 @@ export default class HomePage extends SharedPage {
 
                     </ScrollView>
                 </View>
+                </>: null }
 
+                { (GlobalSession.currentMenuGroup == "av-index") ? 
+                <>
                 <View style={{height: 20}}></View>
                 <View style={{width: '100%', height: 400, backgroundColor: '#fff', padding: 20}}>
                     <View style={{height: 30}}>
@@ -1096,15 +1127,19 @@ export default class HomePage extends SharedPage {
                             {
                                 
                             this.state.totalSalesFiles.map(function(file) {
-                                let filename = file.filename.split("/");
-                                filename = filename[filename.length  -1];
+                                let filename = "";
+                                if(file.filename != null)
+                                {
+                                    filename = file.filename.split("/");
+                                    filename = filename[filename.length  -1];
+                                }
+                                
                             return (
                             <TouchableOpacity key={file.id} onPress={()=> me.viewImage(file)}>
                                 <View style={Style.horizontalLayout} >
-                                    <Image style={{ width: 60, height: 60 }} source={{ uri: "file://" + file.filename }}></Image>
+                                    <Image style={{ width: 60, height: 60 }} source={require('./images/camera.png')}></Image>
                                     <View style={{marginLeft: 20, width: '90%'}}>
                                         <Text style={Style.content}>{file.store_name}</Text>
-                                        <Text style={Style.content}>{filename}</Text>
                                         <Text style={Style.content}>Tot. Item: {file.totalItems}</Text>
                                         {
                                             (file.imageStatus == "rejected") ?
@@ -1123,6 +1158,10 @@ export default class HomePage extends SharedPage {
                     </ScrollView>
                     
                 </View>
+                </>: null }
+
+                { (GlobalSession.currentMenuGroup == "av-index") ? 
+                <>
                 <View style={{height: 20}}></View>
                 <View style={{width: '100%', height: 400, backgroundColor: '#fff', padding: 20}}>
                     <View style={{height: 30}}>
@@ -1182,6 +1221,8 @@ export default class HomePage extends SharedPage {
                     </ScrollView>
                     
                 </View>
+                </>:null}
+                
                 <View style={{height: 20}}></View>
 
             </Content>

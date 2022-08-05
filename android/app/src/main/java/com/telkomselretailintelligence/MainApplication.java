@@ -6,7 +6,8 @@ import android.net.Uri;
 
 import com.facebook.react.PackageList;
 import com.facebook.react.ReactApplication;
-import com.keyee.pdfview.PDFView;
+import com.emekalites.react.compress.image.ImageCompressPackage;
+//import com.keyee.pdfview.PDFView;
 import com.ocetnik.timer.BackgroundTimerPackage;
 import com.reactcommunity.rndatetimepicker.RNDateTimePickerPackage;
 import com.reactnativecommunity.webview.RNCWebViewPackage;
@@ -23,6 +24,7 @@ import com.facebook.react.shell.MainReactPackage;
 import com.facebook.soloader.SoLoader;
 import com.telkomselretailintelligence.generated.BasePackageList;
 import com.dieam.reactnativepushnotification.ReactNativePushNotificationPackage;  // <--- Import Package
+import com.emekalites.react.compress.image.ImageCompressPackage; 
 
 
 import org.unimodules.adapters.react.ReactAdapterPackage;

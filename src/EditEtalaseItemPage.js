@@ -120,7 +120,7 @@ export default class EditEtalaseItemPage extends SharedPage {
 
     async ok()
     {
-        var res = this.validate();
+        var res = await this.validate();
         let me = this;
         if(res.success)
         {
@@ -171,10 +171,10 @@ export default class EditEtalaseItemPage extends SharedPage {
         let me =  this;
         me.state.item.upload_file_id = me.state.file.id;
 
-        let url = GlobalSession.Config.API_HOST + "/storefrontitem/create";
+        let url = GlobalSession.Config.API_HOST + "/etalaseitem/create";
 
         if(me.state.item.id != null)
-            url = GlobalSession.Config.API_HOST + "/storefrontitem/update/" + me.state.item.id;
+            url = GlobalSession.Config.API_HOST + "/etalaseitem/update/" + me.state.item.id;
 
         console.log(url);
         HttpClient.post(url, me.state.item, function(response)
@@ -332,6 +332,34 @@ export default class EditEtalaseItemPage extends SharedPage {
         return !isNaN(parseFloat(n)) && isFinite(n);
     }
 
+    getAvailabilityScore(percentage)
+    {
+        if(percentage >= 40)
+            return 5;
+        else if(percentage >= 30 && percentage < 40)
+            return 4;
+        else if(percentage >= 20 && percentage < 30)
+            return 3;
+        else if(percentage >= 10 && percentage < 20)
+            return 2;
+        else if(percentage < 10)
+            return 1;
+    }
+
+    getVisibilityScore(percentage)
+    {
+        if(percentage >= 40)
+            return 5;
+        else if(percentage >= 30 && percentage < 40)
+            return 4;
+        else if(percentage >= 20 && percentage < 30)
+            return 3;
+        else if(percentage >= 10 && percentage < 20)
+            return 2;
+        else if(percentage < 10)
+            return 1;
+    }
+
     onOperatorChanged(item)
     {
         this.state.item.operatorText = item.label;
@@ -345,7 +373,9 @@ export default class EditEtalaseItemPage extends SharedPage {
 
     setPercentage(value)
     {
+        let available_score = this.getAvailabilityScore(value);
         this.state.item.percentage = value;
+        this.state.item.available_score = available_score;
         this.setState({
             ...this.state,
             item: this.state.item
@@ -353,13 +383,85 @@ export default class EditEtalaseItemPage extends SharedPage {
         })  
     }
 
-    validate()
+    setAvailabilityScore(value)
+    {
+        this.state.item.availability_score = value;
+        this.setState({
+            ...this.state,
+            item: this.state.item
+            
+        })  
+    }
+
+    setVisibilityPercentage(value)
+    {
+        let visibility_score = this.getVisibilityScore(value);
+        this.state.item.visibility_percentage = value;
+        this.state.item.visibility_score = visibility_score;
+        this.setState({
+            ...this.state,
+            item: this.state.item
+            
+        })  
+    }
+
+    setVisibilityScore(value)
+    {
+        this.state.item.visibility_score = value;
+        this.setState({
+            ...this.state,
+            item: this.state.item
+            
+        })  
+    }
+
+    async validate()
     {
         let res = { success: true}
-         res = (this.state.item.operator == null || this.state.item.operator.length == 0) ? { success: false, message: "Mohon pilih operator" } : res;
-         res = (this.state.item.percentage == null || this.state.item.percentage.length == 0) ? { success: false, message: "Mohon isi kira-kira prosentase luas operator tersebut di gambar." } : res;
+        res = (this.state.item.operator == null || this.state.item.operator.length == 0) ? { success: false, message: "Mohon pilih operator" } : res;
+        res = (this.state.item.percentage == null || this.state.item.percentage.length == 0) ? { success: false, message: "Mohon isi kira-kira prosentase luas operator tersebut di gambar." } : res;
+        
+        if(this.state.item.id == null)
+        {
+            let etalaseItems = await this.loadExistingEtalaseItems();
+            let exists = this.checkOperators(etalaseItems)
+            if(exists)
+                res =  { success: false, message: 'Operator \'' + this.state.item.operator + '\' sudah diisi. Pilih operator yang lain.' }
+        }
+
         return res;
     }
+
+    async loadExistingEtalaseItems()
+    {
+        let existingEtalaseItems = await EtalaseItem.findAll({ where: { upload_file_id: this.state.file.id } })
+        return existingEtalaseItems;
+    }
+
+
+    checkOperators(existingEtalaseItems)
+    {
+        let exists = false;
+        let opsel = "";
+        for(var  i = 0; i < existingEtalaseItems.length; i++)
+        {
+            if(this.state.item.operator == existingEtalaseItems[i].operator)
+            {
+                exists = true;
+                break;
+            }
+        }
+
+        return exists;
+    }
+
+    viewImage(){
+        let file = this.props.file;
+        this.state.selectedFile = file;
+
+        Actions.viewImagePage({ editMode:true, file: file, onSaveCropImage: Util.onSaveCropImage.bind(this) })
+    }
+
 
  
  
@@ -380,6 +482,29 @@ export default class EditEtalaseItemPage extends SharedPage {
             </Header>
 
             <Content  style={{backgroundColor: '#eee'}}>
+                <View style={{height: 15}}></View>
+                <View style={{width: '100%', height: 100, backgroundColor: '#fff', padding: 20}}>
+                    <View style={Style.horizontalLayout}>
+                        <View style={{width: '95%', flex:1, flexDirection: 'row'}}>
+                            <View style={{marginTop: -10}}>
+                                <Image source={{ uri: 'file://' + this.props.file.filename }} style={Style.contentImage} resizeMode='contain' ></Image>
+                            </View>
+                            <View style={{width: 10}}></View>
+                            <View style={{width: '70%'}}>
+                                <Text style={Style.content}>{this.state.shortFilename}</Text>
+                                <View style={{height: 5}}></View>
+                                <Text style={Style.content}>{this.props.file.picture_taken_date}</Text>
+                            </View>
+                        </View>
+
+                        <TouchableOpacity onPress={() => this.viewImage()}>
+                            <Text style={Style.contentRedBold}>
+                                Lihat Gambar
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+                <View style={{height: 15}}></View>
                 <View style={{ flex: 1, height: '100%', padding: '5%', backgroundColor: '#ffffff' }}>
                     {
                         this.getDialog()
@@ -409,8 +534,23 @@ export default class EditEtalaseItemPage extends SharedPage {
                     </View>
                     <View style={{height: 20}}></View>
                     <View>
-                        <LabelInput text="Persentase *" subtext="Presentase kira-kira dari operator tersebut di tampak depan"></LabelInput>
+                        <LabelInput text="Availability Percentage *" subtext="Presentase availability kira-kira dari operator tersebut di tampak depan"></LabelInput>
                         <TextInput style={Style.textInput} keyboardType="numeric" value={this.state.item.percentage.toString()} onChangeText={this.setPercentage.bind(this)}/>
+                    </View>
+                    <View style={{height: 20}}></View>
+                    <View>
+                        <LabelInput text="Visibility Percentage *" subtext="Presentase visibility kira-kira dari operator tersebut di tampak depan"></LabelInput>
+                        <TextInput style={Style.textInput} keyboardType="numeric" value={this.state.item.visibility_percentage.toString()} onChangeText={this.setVisibilityPercentage.bind(this)}/>
+                    </View>
+                    <View style={{height: 20}}></View>
+                    <View style={{display: 'none'}}>
+                        <LabelInput text="Availability Score *" subtext=""></LabelInput>
+                        <TextInput style={Style.textInput} keyboardType="numeric" value={this.state.item.availability_score.toString()} editable={false} selectTextOnFocus={false}/>
+                    </View>
+                    <View style={{height: 20}}></View>
+                    <View style={{display: 'none'}}>
+                        <LabelInput text="Visibility Score *" subtext=""></LabelInput>
+                        <TextInput style={Style.textInput} keyboardType="numeric" value={this.state.item.visibility_score.toString()} editable={false} selectTextOnFocus={false}/>
                     </View>
                     <View style={{height: 20}}></View>
 
@@ -425,6 +565,7 @@ export default class EditEtalaseItemPage extends SharedPage {
                 </View>
                 
             </Content>
+            
             <Footer style={{height: 200, borderColor: '#eee', borderWidth: 2}}>
                 <View style={{padding: '5%', backgroundColor: '#ffffff'}}>
                         <Button style={Style.buttonRed} onPress={()=>this.ok()}>

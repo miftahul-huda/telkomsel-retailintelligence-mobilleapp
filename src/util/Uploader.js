@@ -269,15 +269,22 @@ export default class Uploader
                 url = GlobalSession.Config.API_HOST_UPLOAD + "/upload/gcs/" + GlobalSession.Config.TOTALSALES_UPLOAD_PATH;
 
             console.log("UploadFile " + url)
-            HttpClient.upload(url, filepath, function(response){
-                console.log("UploadFile done" + filepath)
-                if(response.success)
-                    resolve(response.payload)
-                else
-                    reject(response.error)
-            }, function(err){
-                reject(err)
-            });
+
+            if(filepath != null)
+            {
+                HttpClient.upload(url, filepath, function(response){
+                    console.log("UploadFile done" + filepath)
+                    if(response.success)
+                        resolve(response.payload)
+                    else
+                        reject(response.error)
+                }, function(err){
+                    reject(err)
+                });
+            }
+            else {
+                resolve("")
+            }
         })
 
         return promise;
@@ -436,6 +443,9 @@ export default class Uploader
     {
         files.map((file)=>{
             let filename = file.filename;
+            if(file.compressed_filename != null && file.compressed_filename.length > 0)
+                filename = file.compressed_filename;
+                
             Uploader.uploadFile(filename).then((url)=>{
 
                 file = Uploader.setFileInfo(file, url);
@@ -687,10 +697,13 @@ export default class Uploader
             await FilePackageSubItem.destroy({where: { packageItemId: {[Op.in]: packageItemIds} }})
             await FilePackageItem.destroy({ where: { upload_file_id: fileid } })
             await StoreFrontItem.destroy({ where: { upload_file_id: fileid } })
+            await TotalSales.destroy({ where: { upload_file_id: fileid } })
+            await EtalaseItem.destroy({ where: { upload_file_id: fileid } })
             await UploadedFile.destroy({ where: { id: fileid} })
 
             try{
                 RNFS.unlink(file.filename);
+                RNFS.unlink(file.compressed_filename);
             }
             catch
             {}
@@ -933,7 +946,11 @@ export default class Uploader
         if(result.success)
         {
             let totalSales2 = Uploader.getTotalSalesByFile(file, totalSales);
-            result = Uploader.validateTotalSalesItems(file, totalSales2);
+            
+            if(totalSales2.length == 0)
+                result = { success: false, message: 'Operator tidak boleh kosong' }
+            else
+                result = Uploader.validateTotalSalesItems(file, totalSales2);
         }
         
         return result;
@@ -954,15 +971,12 @@ export default class Uploader
     static validateTotalSaleItem(item)
     {
         let result = { success: true }
-        if(item.kartuPerdana == null || item.kartuPerdana.length == 0)
-            result = { success: false, message: 'Kartu perdana tidak boleh kosong' }
-        if(item.voucherFisik == null || item.voucherFisik.length == 0)
-            result = { success: false, message: 'Voucher fisik tidak boleh kosong' }
+        /*
         if(item.isiUlang == null || item.isiUlang.length == 0)
             result = { success: false, message: 'Isi ulang tidak boleh kosong' }
         if(item.paketPalingBanyakDibeli == null || item.paketPalingBanyakDibeli.length == 0)
             result = { success: false, message: 'Paket paling banyak dibeli tidak boleh kosong' }
-
+        */
         return result;
     }
 
@@ -1197,12 +1211,17 @@ export default class Uploader
                     else
                     {
                         
-                        console.log("Starting to upload : " + file.filename);
+                        console.log("Starting to upload : " + file.filename + " or "  +  file.compressed_filename);
                         Uploader.STATUS = "Unggah " + file.filename + "...";
 
                         //Upload image from the file 
                         let imageCategory = file.imageCategory;
-                        Uploader.uploadFile(file.filename, imageCategory).then((url)=>{
+
+                        let fileToUpload = file.compressed_filename;
+                        if(fileToUpload == null || fileToUpload.length == 0)
+                            fileToUpload = file.filename;
+
+                        Uploader.uploadFile(fileToUpload, imageCategory).then((url)=>{
 
                             console.log("afteruploadimage " +  url)
                             Uploader.afterUploadImage(file, url, packageItems, packageSubItems, storefrontitems, etalaseItems, totalSales,  function(fcount){

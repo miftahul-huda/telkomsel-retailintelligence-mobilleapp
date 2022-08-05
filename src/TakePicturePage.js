@@ -66,18 +66,50 @@ export default class TakePicturePage extends Component {
             
     }
 
+    getCurrentDate(){
+        var date = new Date();
+        var dateString = date.getFullYear() + "-" + (date.getMonth()  + 1) + "-" + date.getDate();
+        dateString += " " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();
+        return dateString;
+    }
+
     onAfterSelectStore(store)
     {
         var me = this;
         GlobalSession.currentStore = store;
+        console.log(GlobalSession.imageCategory)
 
         setTimeout(function(){
-            Actions.cameraPage({ onBack: me.backFromTakePicture.bind(me), onAfterTakePicture: me.onAfterTakePicture.bind(me), crop: false });
+            if(GlobalSession.imageCategory.value != "total-sales")
+                Actions.cameraPage({ onBack: me.backFromTakePicture.bind(me), onAfterTakePicture: me.onAfterTakePicture.bind(me), crop: false });
+            else 
+            {
+
+                let newFile = {};
+                newFile.imageCategory = "total-sales"
+                newFile.isuploaded = 0;
+                newFile.picture_taken_date = me.getCurrentDate();
+                newFile.picture_taken_by = GlobalSession.currentUser.email;
+                
+        
+                if(GlobalSession.currentStore != null)
+                {
+                    newFile.store_name =  GlobalSession.currentStore.store_name;
+                    newFile.store_id = GlobalSession.currentStore.storeid;
+                }
+                newFile.imageStatus = "draft";
+                newFile.isuploaded = 0;
+                UploadedFile.create(newFile).then((f)=>{
+                    Actions.reset("imageHomeTotalSalesPage", { file: f })
+                })
+            }
+                
         }, 100)
     }
 
     onAfterSelectImageCategory(cat)
     {
+        console.log(cat)
         GlobalSession.imageCategory  = cat;
 
         console.log("GlobalSession.imageCategory")
@@ -94,7 +126,7 @@ export default class TakePicturePage extends Component {
     {
         var me = this;
         setTimeout(function(){
-            me.camera()
+            me.selectImageCategory()
         }, 500)
         
     }
@@ -104,14 +136,15 @@ export default class TakePicturePage extends Component {
         Actions.pop();
     }
 
-    camera()
+    selectImageCategory()
     {
+        console.log("selectImageCategory")
         Actions.posterStoreFrontSelectPage({ onBack: this.backFromPosterStoreFrontSelect.bind(this), onAfterSelectImageCategory : this.onAfterSelectImageCategory.bind(this)});
     }
 
     componentDidMount()
     {
-        this.camera();
+        this.selectImageCategory();
     }
 
 

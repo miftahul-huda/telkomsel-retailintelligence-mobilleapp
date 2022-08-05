@@ -8,6 +8,7 @@ export default class UploadedFile extends Model {
         let o = await super.init(
             {
               filename: Sequelize.TEXT,
+              compressed_filename: Sequelize.TEXT,
               upload_date: Sequelize.STRING,
               picture_taken_date: Sequelize.STRING,
               picture_taken_by: Sequelize.STRING,
@@ -55,6 +56,8 @@ export default class UploadedFile extends Model {
               imageStatus: Sequelize.STRING,
               operatorDominant: Sequelize.STRING,
               operatorDominantText: Sequelize.STRING,
+              originalOperatorDominant: Sequelize.STRING,
+              originalOperatorDominantText: Sequelize.STRING,
               posterTheme: Sequelize.STRING,
 
               //Information for Store front

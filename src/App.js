@@ -40,6 +40,7 @@ import TakePictureBeforeAfterPage from './TakePictureBeforeAfterPage';
 import BeforeAfterPosterHomePage from './BeforeAfterPosterHomePage';
 import BeforeAfterStoreFrontHomePage from './BeforeAfterStoreFrontHomePage'
 import EditTotalSalesPage from './EditTotalSalesPage';
+import SelectImageCategory from './SelectImageCategory';
 
 import { Image, View,Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator, ImageBackground } from 'react-native';
 
@@ -57,7 +58,6 @@ export default class App extends Component {
       message: ""
     }
 
-    Text.default
   }
 
   componentDidMount()
@@ -71,9 +71,8 @@ export default class App extends Component {
       return (
         <Router hideNavBar="true">
           <Scene key="root">
-            
             <Scene key="homePage" component={HomePage} title="HomePage" initial={false} hideNavBar={true} />
-            <Scene key="imageHomePage" component={ImageHomePage} title="ImageHomePage" initial={true} hideNavBar={true} />
+            <Scene key="imageHomePage" component={ImageHomePage} title="ImageHomePage" initial={false} hideNavBar={true} />
             <Scene key="webPage" component={WebPage} title="WebPage" initial={false} hideNavBar={true} />
             <Scene key="beforeAfterPosterHomePage" component={BeforeAfterPosterHomePage} title="BeforeAfterPosterHomePage" initial={false} hideNavBar={true} />
             <Scene key="beforeAfterStoreFrontHomePage" component={BeforeAfterStoreFrontHomePage} title="BeforeAfterStoreFrontHomePage" initial={false} hideNavBar={true} />
@@ -111,6 +110,7 @@ export default class App extends Component {
             <Scene key="quotaAppPage" component={QuotaAppPage} title="Add Quota App" hideNavBar={true} />
             <Scene key="firstPage" component={FirstPage} title="FirstPage" initial={true} hideNavBar={true} />
             <Scene key="editTotalSalesPage" component={EditTotalSalesPage} title="EditTotalSalesPage" initial={false} hideNavBar={true} />
+            <Scene key="selectImageCategory" component={SelectImageCategory} title="SelectImageCategory" initial={false} hideNavBar={true} />
             
           </Scene>
         </Router>

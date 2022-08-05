@@ -20,10 +20,21 @@ GlobalSession = require( './GlobalSession');
 
 import Style from './style';
 
+import { BackHandler } from 'react-native';
+
 export default class PosterStoreSelectPage extends Component {
     constructor(props)
     {
         super(props);
+        this.backhandler = null;
+    }
+
+    componentDidMount() {
+        this.backhandler = BackHandler.addEventListener('hardwareBackPress', this.back)
+    }
+
+    componentWillUnmount() {
+        BackHandler.removeEventListener('hardwareBackPress', this.back)
     }
 
     selectCategory(cat)
@@ -38,13 +49,16 @@ export default class PosterStoreSelectPage extends Component {
     {
         //Actions.pop();
         //Actions.refresh({ data: "back"});
-        if(this.props.onBack != null)
+        /*if(this.props.onBack != null)
         {
             this.props.onBack();
             Actions.pop();
         }
         else
-            Actions.reset("homePage")
+        */
+        Actions.reset("homePage")
+        
+        return true;
     }
 
     render(){
@@ -68,37 +82,51 @@ export default class PosterStoreSelectPage extends Component {
                 <View style={{flex: 1}}>
                     <ScrollView>
                         <List>
+                           
 
-                            <ListItem key={1}>
-                                <TouchableOpacity style={{width: '100%'}} onPress={()=> me.selectCategory({value: 'poster', label: 'Poster'})}>
-                                    <Text style={{ marginLeft: '5%', fontWeight: 'normal', alignSelf: 'flex-start' }}>Foto Poster</Text>
-                                </TouchableOpacity>
-                            </ListItem>
-                            <ListItem key={2} >
-                                <TouchableOpacity style={{width: '100%'}} onPress={()=> me.selectCategory({value: 'storefront', label: 'Store Front'})}>
-                                    <Text style={{ marginLeft: '5%', fontWeight: 'normal', alignSelf: 'flex-start' }}>Foto Tampak Depan</Text>
-                                </TouchableOpacity>
-                            </ListItem>
-                            <ListItem key={3} >
-                                <TouchableOpacity style={{width: '100%'}} onPress={()=> me.selectCategory({value: 'poster-before-after', label: 'Foto Poster Sebelum/Sesudah'})}>
-                                    <Text style={{ marginLeft: '5%', fontWeight: 'normal', alignSelf: 'flex-start' }}>Foto Poster Sebelum/Sesudah</Text>
-                                </TouchableOpacity>
-                            </ListItem>
-                            <ListItem key={4} >
-                                <TouchableOpacity style={{width: '100%'}} onPress={()=> me.selectCategory({value: 'storefront-before-after', label: 'Foto Tampak Depan Sebelum/Sesudah'})}>
-                                    <Text style={{ marginLeft: '5%', fontWeight: 'normal', alignSelf: 'flex-start' }}>Foto Tampak Depan Sebelum/Sesudah</Text>
-                                </TouchableOpacity>
-                            </ListItem>
+
+                            { (GlobalSession.currentMenuGroup == "av-index") ?
                             <ListItem key={5} >
                                 <TouchableOpacity style={{width: '100%'}} onPress={()=> me.selectCategory({value: 'etalase', label: 'Foto Etalase'})}>
-                                    <Text style={{ marginLeft: '5%', fontWeight: 'normal', alignSelf: 'flex-start' }}>Foto Etalase</Text>
+                                    <Text style={{ marginLeft: '5%', fontWeight: 'normal', color: '#333333',alignSelf: 'flex-start' }}>Foto Etalase</Text>
                                 </TouchableOpacity>
-                            </ListItem>
+                            </ListItem> : null  }
+
+                            { (GlobalSession.currentMenuGroup == "av-index") ?
                             <ListItem key={6} >
                                 <TouchableOpacity style={{width: '100%'}} onPress={()=> me.selectCategory({value: 'total-sales', label: 'Foto Etalase'})}>
-                                    <Text style={{ marginLeft: '5%', fontWeight: 'normal', alignSelf: 'flex-start' }}>Total Penjualan</Text>
+                                    <Text style={{ marginLeft: '5%', fontWeight: 'normal', color: '#333333', alignSelf: 'flex-start' }}>Total Penjualan</Text>
                                 </TouchableOpacity>
-                            </ListItem>
+                            </ListItem> : null }
+
+                            { (GlobalSession.currentMenuGroup == "poster") ?
+                            <ListItem key={1}>
+                                <TouchableOpacity style={{width: '100%'}} onPress={()=> me.selectCategory({value: 'poster', label: 'Poster'})}>
+                                    <Text style={{ marginLeft: '5%', fontWeight: 'normal', color: '#333333', alignSelf: 'flex-start' }}>Foto Poster</Text>
+                                </TouchableOpacity>
+                            </ListItem> : null }
+
+                            { (GlobalSession.currentMenuGroup == "poster") ?
+                            <ListItem key={3} >
+                                <TouchableOpacity style={{width: '100%'}} onPress={()=> me.selectCategory({value: 'poster-before-after', label: 'Foto Poster Sebelum/Sesudah'})}>
+                                    <Text style={{ marginLeft: '5%', fontWeight: 'normal', color: '#333333',alignSelf: 'flex-start' }}>Foto Poster Sebelum/Sesudah</Text>
+                                </TouchableOpacity>
+                            </ListItem> : null }
+
+                            { (GlobalSession.currentMenuGroup == "av-index") ?
+                            <ListItem key={2} >
+                                <TouchableOpacity style={{width: '100%'}} onPress={()=> me.selectCategory({value: 'storefront', label: 'Store Front'})}>
+                                    <Text style={{ marginLeft: '5%', fontWeight: 'normal', color: '#333333', alignSelf: 'flex-start' }}>Foto Tampak Depan</Text>
+                                </TouchableOpacity>
+                            </ListItem> : null }
+
+                            { (GlobalSession.currentMenuGroup == "av-index") ?
+                            <ListItem key={4} >
+                                <TouchableOpacity style={{width: '100%'}} onPress={()=> me.selectCategory({value: 'storefront-before-after', label: 'Foto Tampak Depan Sebelum/Sesudah'})}>
+                                    <Text style={{ marginLeft: '5%', fontWeight: 'normal', color: '#333333', alignSelf: 'flex-start' }}>Foto Tampak Depan Sebelum/Sesudah</Text>
+                                </TouchableOpacity>
+                            </ListItem> : null }
+
   
                         </List>
                     </ScrollView>

@@ -1,6 +1,6 @@
 {
-    "VERSION" : "5.0.0",
-    "ENVIRONMENT" : "",
+    "VERSION" : "5.2.2",
+    "ENVIRONMENT" : "(DEV)",
     "LOCAL_DB" : "retail-intelligence-v2",
     "LOCAL_DB_STORAGE" : "./data/retail-intelligence-v2",
 

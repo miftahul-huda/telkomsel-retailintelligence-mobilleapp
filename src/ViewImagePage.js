@@ -162,7 +162,7 @@ export default class ViewImagePage extends SharedPage {
                 
 
               </Content>
-              <Footer style={{backgroundColor: '#FFF', padding: '3%'}}>
+              <Footer style={{backgroundColor: '#FFF', padding: '3%', display: 'none'}}>
                   { (this.props.editMode) ?
                   <>
                   <TouchableOpacity onPress={this.crop.bind(this)} >

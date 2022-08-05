@@ -16,8 +16,6 @@ import DropDownPicker from 'react-native-dropdown-picker';
 
 import Config from './config.json';
 import HttpClient from './util/HttpClient';
-GlobalSession = require( './GlobalSession');
-
 import * as RNFS from 'react-native-fs';
 
 import Sequelize from "rn-sequelize";
@@ -30,6 +28,7 @@ import BackupRestoreLogic from './actions/BackupRestoreLogic';
 import Style from './style';
 import SharedPage from './SharedPage';
 import LabelInput from './components/LabelInput';
+import GlobalSession from './GlobalSession';
 
 
 const FILE_STORAGE_PATH = RNFS.DownloadDirectoryPath;
@@ -233,8 +232,10 @@ export default class ProfilePage extends SharedPage {
       let url = GlobalSession.Config.API_HOST_UPLOAD + "/upload/gcs/download/" + GlobalSession.Config.GCS_PROJECT + "/" + GlobalSession.Config.GCS_APP_BUCKET + "/" + path;
       url = "https://storage.googleapis.com/retail-intelligence-bucket/retina-app-resources/tutorial.pdf"      
 
+      url = GlobalSession.Config.MANUAL_FILE_URL;
+
       let gurl = "http://docs.google.com/gview?embedded=true&url=https://storage.googleapis.com/retail-intelligence-bucket/retina-app-resources/tutorial.pdf";
-      console.log(gurl);
+      console.log(url);
 
       Linking.openURL(url)
       //Actions.reset("webPage", { url: url, title: 'Tutorial Retina v.' + GlobalSession.Config.VERSION, type: "pdf"  })

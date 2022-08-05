@@ -361,6 +361,14 @@ export default class EditStoreFrontItemPage extends SharedPage {
         return res;
     }
 
+    viewImage(){
+        let file = this.props.file;
+        this.state.selectedFile = file;
+
+        Actions.viewImagePage({ editMode:true, file: file, onSaveCropImage: null })
+    }
+
+
  
  
     render() {
@@ -380,10 +388,34 @@ export default class EditStoreFrontItemPage extends SharedPage {
             </Header>
 
             <Content  style={{backgroundColor: '#eee'}}>
+                <View style={{height: 15}}></View>
+                <View style={{width: '100%', height: 100, backgroundColor: '#fff', padding: 20}}>
+                    <View style={Style.horizontalLayout}>
+                        <View style={{width: '95%', flex:1, flexDirection: 'row'}}>
+                            <View style={{marginTop: -10}}>
+                                <Image source={{ uri: 'file://' + this.props.file.filename }} style={Style.contentImage} resizeMode='contain' ></Image>
+                            </View>
+                            <View style={{width: 10}}></View>
+                            <View style={{width: '70%'}}>
+                                <Text style={Style.content}>{this.state.shortFilename}</Text>
+                                <View style={{height: 5}}></View>
+                                <Text style={Style.content}>{this.props.file.picture_taken_date}</Text>
+                            </View>
+                        </View>
+
+                        <TouchableOpacity onPress={() => this.viewImage()}>
+                            <Text style={Style.contentRedBold}>
+                                Lihat Gambar
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+                <View style={{height: 15}}></View>
                 <View style={{ flex: 1, height: '100%', padding: '5%', backgroundColor: '#ffffff' }}>
                     {
                         this.getDialog()
                     }
+                    
                     <View>
                         <LabelInput text="Operator *" subtext="Operator yang terlihat di tampak depan"></LabelInput>
                         {(this.state.showIndicator) ? 

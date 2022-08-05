@@ -173,13 +173,38 @@ export default class LoginPage extends Component {
     console.log(granted);
   }
 
+  loadAssignStores(user, callback)
+  {
+    let url = GlobalSession.Config.API_HOST + "/store/get-generic/" + user.email + "/" + user.sfcode;
+    //let url = "http://127.0.0.1:8080/store/get-generic/" + user.email + "/" + user.sfcode;
 
-  async openMenu()
+    console.log("loadAssignStores")
+    console.log(url)
+    HttpClient.get(url, function(response){
+      console.log("loadAssignStores")
+      console.log(response)
+      if(response.success == true)
+      {
+        GlobalSession.stores = response.payload;
+      }
+
+      if(callback != null)
+        callback();
+    })
+  }
+
+
+  async openMenu(me)
   {
 
     try {
-      Actions.homePage();
+      //Actions.homePage();
       //Actions.menuPage();
+
+      me.loadAssignStores(GlobalSession.currentUser, function(){
+        Actions.selectImageCategory();
+      })
+      
     }
     catch(err)
     {
@@ -229,6 +254,8 @@ export default class LoginPage extends Component {
           me.setState({
             showIndicator: false
           })
+
+          alert("Konfigurasi aplikasi gagal. Pastikan anda memiliki koneksi internet.")
           reject(err)
         })
       }
@@ -237,6 +264,7 @@ export default class LoginPage extends Component {
         this.setState({
           showIndicator: false
         })
+        alert("Konfigurasi aplikasi gagal. Pastikan anda memiliki koneksi internet.")
         reject(err)
       }
 
@@ -259,6 +287,9 @@ export default class LoginPage extends Component {
         if(res.success)
         {
           GlobalSession.currentUser = res.payload;
+
+          console.log('GlobalSession.currentUser')
+          console.log(res.payload)
           me.setState({ 
             showIndicator: false
           })
@@ -275,12 +306,12 @@ export default class LoginPage extends Component {
   
           }
           RNFS.writeFile(FILE_STORAGE_PATH + "/retail-intelligence/login.txt", sJson).then(function (){
-            me.openMenu();
+            me.openMenu(me);
   
           }).catch(function (err){
             let ss = JSON.stringify(err);
             Logging.log(err, "error", "LoginPage.login().HttpClient.post().RNFS.writeFile(FILE_STORAGE_PATH = /retail-intelligence/login.txt, sJson)")
-            me.openMenu();
+            me.openMenu(me);
             //alert("Error.RNFS.writeFile :  "  + ss);   
           })
           
@@ -422,11 +453,12 @@ export default class LoginPage extends Component {
               onPress= {() => { this.login(); }}>
 
                 <View style={Style.buttonContentDark}>
-                  <Text style={Style.textWhite}>Masuk</Text>
+                  <Label style={Style.textWhite}>Masuk</Label>
                 </View>
               
             </Button>
-            <View style={{height: 150}}></View>
+            <View style={{height: 50}}>
+            </View>
 
           
          </Content>

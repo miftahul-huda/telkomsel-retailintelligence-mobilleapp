@@ -5,7 +5,7 @@ import { Container, Content, Text, Card, Header, Footer, Body, Button, Title,
   Left,
   Item, CardItem, Icon, View } from 'native-base';
 
-import { Image, ImageBackground, ScrollView, ActivityIndicator, ActionSheetIOS} from 'react-native';
+import { Image, ImageBackground, ScrollView, ActivityIndicator, ActionSheetIOS, Alert} from 'react-native';
 import { Actions } from 'react-native-router-flux';
 
 import UploadedFile from './model/UploadedFile';
@@ -23,6 +23,7 @@ import Sequelize from "rn-sequelize";
 import { TouchableOpacity } from 'react-native-gesture-handler';
 import StoreFrontItem from './model/StoreFrontItem';
 const Op = Sequelize.Op;
+import * as RNFS from 'react-native-fs';
 
 
 
@@ -441,7 +442,7 @@ export default class ImageHomeStoreFrontPage extends SharedPage {
 
     uploadToGcs(orientation, callback, callbackError)
     {
-        var url = GlobalSession.Config.API_HOST_UPLOAD + "/upload/gcs/telkomsel-retail-intelligence/retail-intelligence-bucket/temporary";
+        var url = GlobalSession.Config.API_HOST_UPLOAD + "/upload/gcs/" + GlobalSession.Config.TEMPORARY_UPLOAD_PATH;
         console.log(url);
         HttpClient.upload(url, this.state.file.filename, function(res){
             console.log("done upload image");
@@ -498,11 +499,34 @@ export default class ImageHomeStoreFrontPage extends SharedPage {
         });
     }
 
+    async delete()
+    {
+        var me = this;
+        Alert.alert("Konfirmasi hapus", "Data akan dihapus, apakah anda yakin?", [
+            {
+                text:  "Ya",
+                onPress: async ()=>{
+
+                    await StoreFrontItem.destroy({ where: { upload_file_id: me.state.file.id }  })
+                    await UploadedFile.destroy({ where: { id: me.state.file.id } })
+                    try { await RNFS.unlink(me.state.file.filename) } catch (e) {}
+                    try { await RNFS.unlink(me.state.file.compressed_filename) } catch (e) {}
+                    alert("Data telah dihapus")
+                    Actions.reset("uploadPage", { imageCategory: "storefront", imageStatus: "draft" })
+
+                }
+            },
+            {
+                text: "Tidak"
+            }
+        ])
+    }
+
     render()
     {
         var me = this;
         let opacity = 1;
-        let botHeight = 200;
+        let botHeight = 240;
 
         if(this.state.showIndicator)
             opacity = 0.3;
@@ -555,7 +579,7 @@ export default class ImageHomeStoreFrontPage extends SharedPage {
 
                             <TouchableOpacity onPress={() => this.viewImage()}>
                                 <Text style={Style.contentRedBold}>
-                                    Edit
+                                    Lihat
                                 </Text>
                             </TouchableOpacity>
                         </View>
@@ -652,6 +676,12 @@ export default class ImageHomeStoreFrontPage extends SharedPage {
                                     <Button style={Style.button} onPress={()=>this.setStatus("draft")}>
                                         <View style={{ alignItems: 'center', width: '100%' }}>
                                             <Text style={Style.textDark}>Simpan sebagai draft</Text>
+                                        </View>
+                                    </Button>
+                                    <View style={{height: 5}}></View>
+                                    <Button style={Style.button} onPress={()=>this.delete()}>
+                                        <View style={{ alignItems: 'center', width: '100%' }}>
+                                            <Text style={Style.textDark}>Hapus</Text>
                                         </View>
                                     </Button>
                                 

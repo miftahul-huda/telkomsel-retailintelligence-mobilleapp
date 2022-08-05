@@ -30,6 +30,7 @@
     "react-native-background-timer": "^2.4.1",
     "react-native-base64": "^0.2.1",
     "react-native-camera": "git+https://git@github.com/react-native-community/react-native-camera.git",
+    "react-native-compress-image": "^2.0.1",
     "react-native-dropdown-picker": "^3.8.3",
     "react-native-exif": "^0.4.0",
     "react-native-file-type": "0.0.8",
@@ -42,7 +43,6 @@
     "react-native-material-dropdown": "^0.11.1",
     "react-native-modal": "^11.5.6",
     "react-native-pdf": "^6.3.0",
-    "react-native-pdf-view": "^0.3.2",
     "react-native-popup-dialog": "^0.18.3",
     "react-native-push-notification": "^7.4.0",
     "react-native-radio-button": "^2.0.1",
@@ -68,6 +68,11 @@
   },
   "jest": {
     "preset": "react-native"
+  },
+  "rnpm": {
+    "assets": [
+      "./assets/fonts"
+    ]
   },
   "private": true
 }

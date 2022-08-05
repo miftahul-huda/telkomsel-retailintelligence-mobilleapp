@@ -163,10 +163,13 @@ export default class PosterInfoPage extends SharedPage
 
     }
 
-    viewImage()
-    {
+    viewImage(){
+        let file = this.props.file;
+        this.state.selectedFile = file;
 
+        Actions.viewImagePage({ editMode:true, file: file, onSaveCropImage: Util.onSaveCropImage.bind(this) })
     }
+
 
     selectPosterType(item)
     {

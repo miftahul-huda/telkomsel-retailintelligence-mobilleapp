@@ -35,6 +35,10 @@ export default class AddStorePage extends Component {
 
     componentDidMount(){
         this.loadAreas();
+        this.setState({
+            ...this.state,
+            store_city: GlobalSession.currentUser.city
+        })
     }
 
     back()
@@ -115,6 +119,35 @@ export default class AddStorePage extends Component {
         return promise;
     }
 
+    addStoreUserToDatabase(store_id, store_name, username, sfcode)
+    {
+        let promise = new Promise((resolve, reject)=>{
+            let url = GlobalSession.Config.API_HOST + "/storeuser/add";
+
+            console.log("Store user:")
+            console.log(url)
+
+            let storeUser = {};
+            storeUser.store_name = store_name;
+            storeUser.storeid = store_id;
+            storeUser.username = username;
+            storeUser.sfcode = sfcode;
+
+            console.log(storeUser)
+            try {
+                HttpClient.post(url, storeUser , function(res){
+                    resolve(res.payload);
+                }, function(e){
+                    reject(e);
+                });      
+            }catch(e){
+                reject(e);
+            }
+
+        });
+        return promise;
+    }
+
     addStore()
     {
         var me = this;
@@ -128,16 +161,31 @@ export default class AddStorePage extends Component {
                 showIndicator: true
             })
             me.addStoreToDatabase(store_id, store_name, store_area).then(function (newStore){
-                me.setState({
-                    showIndicator: false
+                
+                me.addStoreUserToDatabase(store_id, store_name, GlobalSession.currentUser.email, GlobalSession.currentUser.sfcode).then((response)=>{
+                    me.setState({
+                        showIndicator: false
+                    })
+                    alert("Data outlet berhasil disimpan")
+                    if(me.props.onAfterSaveNewOutlet != null)
+                        me.props.onAfterSaveNewOutlet(newStore);
+                        
+                    Actions.pop();
+                }).catch((e)=>{
+                    me.setState({
+                        showIndicator: false
+                    })
+                    console.log(e)
+                    alert("addStoreUserToDatabase: Simpan outlet gagal")
                 })
-                Actions.pop();
+                
             }).catch(function(err){
                 me.setState({
                     showIndicator: false
                 })
                 let s = JSON.stringify(err);
-                alert("Error " + s);
+                //alert("Error " + s);
+                alert("addStoreToDatabase: Simpan outlet gagal")
                 Logging.log(err, "error", "AddStorePage.addStore().me.addStoreToDatabase()")
             })
         }
@@ -160,6 +208,11 @@ export default class AddStorePage extends Component {
         else if(this.state.selectedArea.area.trim() == null || this.state.selectedArea.area.trim().length == 0)
         {
             alert("Harap isi Area Outlet");
+            return false;
+        }
+        else if(this.state.store_city == null || this.state.store_city.trim().length == 0)
+        {
+            alert("Harap isi Kabupaten Outlet");
             return false;
         }
 
@@ -207,7 +260,7 @@ export default class AddStorePage extends Component {
                         <View style={{height: 20}}></View>
                         <View>
                             <LabelInput text="Kabupaten/kota" subtext="Kabupaten/kota tempat di mana outlet berada"></LabelInput>
-                            <TextInput style={Style.textInput} onChangeText={value => { this.setState({ store_city: value }) }}/>
+                            <TextInput value={this.state.store_city} style={Style.textInput} onChangeText={value => { this.setState({ store_city: value }) }}/>
                         </View> 
                         <View style={{height: 20}}></View>
                         <View>
